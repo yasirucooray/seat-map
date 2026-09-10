@@ -1346,13 +1346,17 @@
         async function fetchBookingsAndRender() {
             try {
                 const response = await fetch('/api/bookings');
-                const data = await response.json();
-                reservationsList = data.reservations || [];
-                
-                renderGrids();
-                updateStats();
+                if (response.ok) {
+                    const data = await response.json();
+                    reservationsList = data.reservations || [];
+                } else {
+                    console.error("Bookings API returned status:", response.status);
+                }
             } catch (err) {
                 console.error("Error fetching bookings:", err);
+            } finally {
+                renderGrids();
+                updateStats();
             }
         }
 
@@ -1365,9 +1369,12 @@
             const platCap = 108 * 8;
             const platPct = platCap > 0 ? ((platSold / platCap) * 100).toFixed(1) : 0;
 
-            document.getElementById('stats-platinum-sold').innerHTML = `${platSold} <span style="font-size: 1.1rem; font-weight: 500; color: var(--text-muted);">/ ${platCap}</span>`;
-            document.getElementById('stats-platinum-pct').innerText = platPct;
-            document.getElementById('stats-platinum-progress').style.width = `${platPct}%`;
+            const elPlatSold = document.getElementById('stats-platinum-sold');
+            if (elPlatSold) elPlatSold.innerHTML = `${platSold} <span style="font-size: 1.1rem; font-weight: 500; color: var(--text-muted);">/ ${platCap}</span>`;
+            const elPlatPct = document.getElementById('stats-platinum-pct');
+            if (elPlatPct) elPlatPct.innerText = platPct;
+            const elPlatProg = document.getElementById('stats-platinum-progress');
+            if (elPlatProg) elPlatProg.style.width = `${platPct}%`;
 
             // Gold Stats
             const goldFull = reservationsList.filter(r => r.category === 'gold' && r.is_full_table).length;
@@ -1376,13 +1383,17 @@
             const goldCap = 144 * 8;
             const goldPct = goldCap > 0 ? ((goldSold / goldCap) * 100).toFixed(1) : 0;
 
-            document.getElementById('stats-gold-sold').innerHTML = `${goldSold} <span style="font-size: 1.1rem; font-weight: 500; color: var(--text-muted);">/ ${goldCap}</span>`;
-            document.getElementById('stats-gold-pct').innerText = goldPct;
-            document.getElementById('stats-gold-progress').style.width = `${goldPct}%`;
+            const elGoldSold = document.getElementById('stats-gold-sold');
+            if (elGoldSold) elGoldSold.innerHTML = `${goldSold} <span style="font-size: 1.1rem; font-weight: 500; color: var(--text-muted);">/ ${goldCap}</span>`;
+            const elGoldPct = document.getElementById('stats-gold-pct');
+            if (elGoldPct) elGoldPct.innerText = goldPct;
+            const elGoldProg = document.getElementById('stats-gold-progress');
+            if (elGoldProg) elGoldProg.style.width = `${goldPct}%`;
 
             // Standing Stats
             const standingSold = reservationsList.filter(r => r.category === 'standing').length;
-            document.getElementById('stats-standing-sold').innerText = standingSold;
+            const elStandingSold = document.getElementById('stats-standing-sold');
+            if (elStandingSold) elStandingSold.innerText = standingSold;
         }
 
         // Render Table Grids
@@ -1404,7 +1415,11 @@
                 const label = side.toUpperCase().substring(0,1) + i;
                 btn.innerText = label;
 
-                const bookingsForTable = reservationsList.filter(r => r.category === category && r.side === side && r.table_number === i);
+                const bookingsForTable = reservationsList.filter(r => 
+                    r.category && r.category.toLowerCase() === category.toLowerCase() && 
+                    r.side && r.side.toLowerCase() === side.toLowerCase() && 
+                    parseInt(r.table_number, 10) === parseInt(i, 10)
+                );
                 const isFull = bookingsForTable.some(r => r.is_full_table);
                 const bookedSeatsCount = bookingsForTable.length;
 
@@ -1771,9 +1786,14 @@
             }, 4000);
         }
 
-        window.addEventListener('load', () => {
+        document.addEventListener('DOMContentLoaded', () => {
+            renderGrids();
             fetchBookingsAndRender();
             reloadRecentBookingsTable();
+        });
+        window.addEventListener('load', () => {
+            renderGrids();
+            fetchBookingsAndRender();
         });
     </script>
 
