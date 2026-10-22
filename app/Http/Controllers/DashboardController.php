@@ -24,11 +24,23 @@ class DashboardController extends Controller
         // Standing calculations
         $standingSold = Reservation::where('category', 'standing')->count();
 
+        // Total calculations
+        $totalSold = $platinumSold + $goldSold + $standingSold;
+        $totalSeatedCapacity = $platinumCapacity + $goldCapacity;
+        $totalSeatedSold = $platinumSold + $goldSold;
+        $totalSeatedPercentage = $totalSeatedCapacity > 0 ? round(($totalSeatedSold / $totalSeatedCapacity) * 100, 1) : 0;
+
         // Recent bookings (latest 10)
         $recentBookings = Reservation::orderBy('id', 'desc')->take(10)->get();
 
         return view('dashboard', [
             'stats' => [
+                'total' => [
+                    'sold' => $totalSold,
+                    'seated_sold' => $totalSeatedSold,
+                    'capacity' => $totalSeatedCapacity,
+                    'percentage' => $totalSeatedPercentage,
+                ],
                 'platinum' => [
                     'sold' => $platinumSold,
                     'capacity' => $platinumCapacity,

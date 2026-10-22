@@ -5,6 +5,10 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
+// Anonymous Customer Seat Locator (Public, 100% Private, Zero Admin Details)
+Route::get('/seat/{ticket?}', [\App\Http\Controllers\CustomerSeatController::class, 'show'])->name('customer.seat');
+Route::get('/find-seat/{ticket?}', [\App\Http\Controllers\CustomerSeatController::class, 'show']);
+
 Route::get('/', function () {
     return redirect()->route('dashboard');
 });

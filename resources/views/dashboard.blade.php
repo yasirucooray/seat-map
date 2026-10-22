@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>KALABARA (කලාබර) - Live Concert Seat Reservation</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- 100% Self-Hosted & Local: Zero Third-Party / CDN dependencies -->
     <style>
         :root {
             --bg-dark: #07060c;
@@ -315,7 +315,7 @@
         /* Metrics Row */
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-bottom: 35px;
         }
@@ -346,6 +346,7 @@
             height: 100%;
         }
 
+        .card-total::before { background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #2ec4b6 100%); }
         .card-platinum::before { background: var(--gold-gradient); }
         .card-gold::before { background: var(--crimson-gradient); }
         .card-standing::before { background: linear-gradient(135deg, #9d4edd, #2ec4b6); }
@@ -368,6 +369,7 @@
         .metric-suit-icon {
             font-size: 1.4rem;
         }
+        .card-total .metric-suit-icon { color: #00f2fe; text-shadow: 0 0 12px rgba(0, 242, 254, 0.5); }
         .card-platinum .metric-suit-icon { color: var(--gold-primary); text-shadow: 0 0 10px var(--gold-glow); }
         .card-gold .metric-suit-icon { color: var(--ruby-red); text-shadow: 0 0 10px var(--ruby-glow); }
         .card-standing .metric-suit-icon { color: var(--royal-purple); text-shadow: 0 0 10px var(--purple-glow); }
@@ -402,6 +404,7 @@
             transition: width 1s ease-in-out;
         }
 
+        .card-total .progress-bar { background: linear-gradient(135deg, #00f2fe, #2ec4b6); box-shadow: 0 0 10px rgba(0, 242, 254, 0.4); }
         .card-platinum .progress-bar { background: var(--gold-gradient); box-shadow: 0 0 10px var(--gold-glow); }
         .card-gold .progress-bar { background: var(--crimson-gradient); box-shadow: 0 0 10px var(--ruby-glow); }
 
@@ -933,7 +936,310 @@
         .badge-gold { background: rgba(230, 57, 70, 0.12); color: #ff758f; border: 1px solid rgba(230, 57, 70, 0.3); }
         .badge-standing { background: rgba(157, 78, 221, 0.12); color: #c77dff; border: 1px solid rgba(157, 78, 221, 0.3); }
 
+        /* =========================================================
+           ARENA TOOLBAR & 2D / 3D VIEW SWITCHER
+           ========================================================= */
+        .arena-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 28px;
+            padding: 16px 20px;
+            background: rgba(14, 11, 23, 0.7);
+            border: 1px solid var(--border-gold);
+            border-radius: 18px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            flex-wrap: wrap;
+        }
+
+        /* =========================================================
+           UNIVERSAL ARENA SEARCH BOX
+           ========================================================= */
+        .arena-search-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-grow: 1;
+            max-width: 580px;
+        }
+
+        .search-input-group {
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-glass-icon {
+            position: absolute;
+            left: 14px;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .seat-search-input {
+            width: 100%;
+            background: rgba(7, 5, 13, 0.8);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 24px;
+            padding: 10px 38px 10px 40px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.88rem;
+            color: #fff;
+            transition: all 0.25s ease;
+            outline: none;
+        }
+
+        .seat-search-input:focus {
+            border-color: #00f2fe;
+            box-shadow: 0 0 18px rgba(0, 242, 254, 0.35);
+            background: rgba(10, 8, 18, 0.95);
+        }
+
+        .search-clear-btn {
+            position: absolute;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 2px 6px;
+            transition: color 0.2s ease;
+        }
+
+        .search-clear-btn:hover {
+            color: #ff4d6d;
+        }
+
+        .search-status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+
+        .search-match-count {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .search-nav-btns {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 20px;
+            padding: 2px 6px;
+            gap: 4px;
+        }
+
+        .search-step-btn {
+            background: transparent;
+            border: none;
+            color: #00f2fe;
+            font-size: 1.1rem;
+            font-weight: bold;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: transform 0.15s ease;
+        }
+
+        .search-step-btn:hover {
+            transform: scale(1.25);
+        }
+
+        .search-step-index {
+            font-size: 0.75rem;
+            color: #00f2fe;
+            font-weight: 700;
+            padding: 0 4px;
+        }
+
+        /* =========================================================
+           SEARCH RESULTS DROPDOWN PANEL
+           ========================================================= */
+        .search-dropdown-panel {
+            background: rgba(18, 14, 28, 0.97);
+            border: 1px solid #00f2fe;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(0, 242, 254, 0.25);
+            border-radius: 18px;
+            margin-bottom: 24px;
+            padding: 16px;
+            max-height: 280px;
+            overflow-y: auto;
+            backdrop-filter: blur(16px);
+            animation: fadeInDown 0.25s ease;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .search-dropdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #00f2fe;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .search-dropdown-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .search-dropdown-close:hover {
+            color: #ff4d6d;
+        }
+
+        .search-dropdown-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+        }
+
+        .search-dropdown-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            border-radius: 12px;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .search-dropdown-item:hover, .search-dropdown-item.active {
+            background: rgba(0, 242, 254, 0.12);
+            border-color: #00f2fe;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .search-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .search-item-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #fff;
+        }
+
+        .search-item-badge {
+            background: rgba(0, 242, 254, 0.15);
+            color: #00f2fe;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 242, 254, 0.35);
+        }
+
+        .search-item-sub {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .search-view-btn {
+            background: rgba(0, 242, 254, 0.2);
+            border: 1px solid #00f2fe;
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-top: 6px;
+            align-self: flex-start;
+            transition: background 0.2s;
+        }
+        .search-view-btn:hover {
+            background: #00f2fe;
+            color: #07060c;
+        }
+
+        /* =========================================================
+           SEARCH HIGHLIGHTING IN 2D & 3D
+           ========================================================= */
+        .table-btn.search-matched-table {
+            border-color: #00f2fe !important;
+            background: rgba(0, 242, 254, 0.28) !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 20px #00f2fe, inset 0 0 12px #00f2fe !important;
+            transform: scale(1.18) !important;
+            z-index: 15;
+            animation: searchGlowPulse 1.2s infinite alternate !important;
+        }
+
+        @keyframes searchGlowPulse {
+            0% {
+                box-shadow: 0 0 12px rgba(0, 242, 254, 0.6), inset 0 0 8px rgba(0, 242, 254, 0.4);
+                border-color: #00f2fe;
+            }
+            100% {
+                box-shadow: 0 0 28px rgba(0, 242, 254, 1), 0 0 45px rgba(0, 242, 254, 0.6), inset 0 0 16px rgba(0, 242, 254, 0.8);
+                border-color: #ffffff;
+            }
+        }
+
+        .standing-box.search-matched-standing {
+            border-color: #00f2fe !important;
+            border-style: solid !important;
+            background: rgba(0, 242, 254, 0.2) !important;
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.6) !important;
+            animation: searchGlowPulse 1.2s infinite alternate !important;
+        }
+
+        .seat-circle.search-matched-seat {
+            border-color: #00f2fe !important;
+            background: radial-gradient(circle, #00f2fe 0%, #005f73 100%) !important;
+            color: #07060c !important;
+            font-weight: 900 !important;
+            box-shadow: 0 0 20px #00f2fe, 0 0 35px #00f2fe !important;
+            animation: searchGlowPulse 1.2s infinite alternate !important;
+        }
+
+        .modal-search-match-banner {
+            background: rgba(0, 242, 254, 0.12);
+            border: 1px solid rgba(0, 242, 254, 0.4);
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin-bottom: 14px;
+            font-size: 0.82rem;
+            color: #00f2fe;
+            text-align: center;
+        }
+
         /* Responsive Layout Adjustments */
+        @media (max-width: 1240px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+        }
+
         @media (max-width: 1180px) {
             .arena-layout {
                 grid-template-columns: 1fr;
@@ -1034,6 +1340,9 @@
             <div class="info-pill">
                 📞 <strong>077 336 6324</strong>
             </div>
+            <div class="info-pill" style="border-color: rgba(0, 242, 254, 0.4); color: #00f2fe; background: rgba(0, 242, 254, 0.08);">
+                🎟️ <strong><span id="header-total-sold">{{ $stats['total']['sold'] }}</span> TOTAL SOLD</strong>
+            </div>
         </div>
 
         <div class="header-actions">
@@ -1048,6 +1357,23 @@
     <div class="dashboard-container">
         <!-- Metrics Row -->
         <div class="metrics-grid">
+            <!-- Total Tickets Sold -->
+            <div class="metric-card card-total">
+                <div class="metric-header">
+                    <div class="metric-title">TOTAL TICKETS SOLD</div>
+                    <div class="metric-suit-icon">♦</div>
+                </div>
+                <div class="metric-value" id="stats-total-sold">{{ $stats['total']['sold'] }}</div>
+                <div class="metric-sub" id="stats-total-sub">
+                    <span style="color: var(--gold-primary);">♠ {{ $stats['platinum']['sold'] }}</span> &bull; 
+                    <span style="color: #ff758f;">♥ {{ $stats['gold']['sold'] }}</span> &bull; 
+                    <span style="color: #c77dff;">♣ {{ $stats['standing']['sold'] }}</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="stats-total-progress" style="width: {{ $stats['total']['percentage'] }}%"></div>
+                </div>
+            </div>
+
             <!-- Platinum -->
             <div class="metric-card card-platinum">
                 <div class="metric-header">
@@ -1086,81 +1412,117 @@
         </div>
 
         <!-- Main Arena Booking Card -->
-        <div class="arena-card">
-            <div class="stage-container">
-                <div class="stage-banner">
-                    <div class="stage-title">♠ STAGE ♠</div>
-                    <div class="stage-subtitle">KALABARA LIVE • WATERS EDGE</div>
+        <div class="arena-card" id="arena-main-card">
+            <!-- Arena Command Toolbar: Real-Time Universal Search -->
+            <div class="arena-toolbar">
+                <div class="arena-search-box">
+                    <div class="search-input-group">
+                        <span class="search-glass-icon">🔍</span>
+                        <input type="text" id="seat-search-input" class="seat-search-input" 
+                               placeholder="Search guest name, email, order no (e.g. Prabath, ORDMQ...)..." 
+                               oninput="handleSeatSearch(this.value)" autocomplete="off" />
+                        <button type="button" class="search-clear-btn" id="search-clear-btn" onclick="clearSeatSearch()" title="Clear search" style="display:none;">&times;</button>
+                    </div>
+
+                    <div class="search-status-bar" id="search-status-bar" style="display:none;">
+                        <span class="search-match-count" id="search-match-count">0 found</span>
+                        <div class="search-nav-btns" id="search-nav-btns">
+                            <button type="button" class="search-step-btn" onclick="stepSearchMatch(-1)" title="Previous match">&lsaquo;</button>
+                            <span class="search-step-index" id="search-step-index">1/1</span>
+                            <button type="button" class="search-step-btn" onclick="stepSearchMatch(1)" title="Next match">&rsaquo;</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="arena-layout">
-                <!-- Left Side Container (L) -->
-                <div class="side-container">
-                    <div class="side-header left">♠ LEFT WING - L</div>
+            <!-- Search Results Dropdown Tray -->
+            <div class="search-dropdown-panel" id="search-dropdown-panel" style="display:none;">
+                <div class="search-dropdown-header">
+                    <span class="dropdown-title" id="search-dropdown-title">Matching Reservations</span>
+                    <button type="button" class="search-dropdown-close" onclick="closeSearchDropdown()">&times;</button>
+                </div>
+                <div class="search-dropdown-list" id="search-dropdown-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
 
-                    <!-- Platinum Section -->
-                    <div class="category-section">
-                        <div class="category-section-title platinum-section-title">
-                            <span>♠</span> PLATINUM (Tables 1 - 54)
-                        </div>
-                        <div class="tables-grid" id="platinum-left-grid">
-                            <!-- Populated via JS -->
-                        </div>
-                    </div>
-
-                    <!-- Gold Section -->
-                    <div class="category-section">
-                        <div class="category-section-title gold-section-title">
-                            <span>♥</span> GOLD (Tables 55 - 126)
-                        </div>
-                        <div class="tables-grid" id="gold-left-grid">
-                            <!-- Populated via JS -->
-                        </div>
+            <!-- 2D Floor Plan Container -->
+            <div id="arena-2d-container" class="arena-view-container active">
+                <div class="stage-container">
+                    <div class="stage-banner">
+                        <div class="stage-title">♠ STAGE ♠</div>
+                        <div class="stage-subtitle">KALABARA LIVE • WATERS EDGE</div>
                     </div>
                 </div>
 
-                <!-- Standing Column (Middle) -->
-                <div class="standing-column">
-                    <div class="side-header" style="color: #c77dff; border-color: rgba(157, 78, 221, 0.3);">♣ STANDING</div>
-                    <div class="standing-box" onclick="openStandingBooking('left')">
-                        <div class="suit-icon">♣</div>
-                        <h3>Left Standing</h3>
-                        <p>Click to reserve</p>
-                    </div>
-                    <div class="standing-box" onclick="openStandingBooking('center')">
-                        <div class="suit-icon">♠</div>
-                        <h3>Center Standing</h3>
-                        <p>Click to reserve</p>
-                    </div>
-                    <div class="standing-box" onclick="openStandingBooking('right')">
-                        <div class="suit-icon">♥</div>
-                        <h3>Right Standing</h3>
-                        <p>Click to reserve</p>
-                    </div>
-                </div>
+                <div class="arena-layout">
+                    <!-- Left Side Container (L) -->
+                    <div class="side-container">
+                        <div class="side-header left">♠ LEFT WING - L</div>
 
-                <!-- Right Side Container (R) -->
-                <div class="side-container">
-                    <div class="side-header right">♥ RIGHT WING - R</div>
-
-                    <!-- Platinum Section -->
-                    <div class="category-section">
-                        <div class="category-section-title platinum-section-title">
-                            <span>♠</span> PLATINUM (Tables 1 - 54)
+                        <!-- Platinum Section -->
+                        <div class="category-section">
+                            <div class="category-section-title platinum-section-title">
+                                <span>♠</span> PLATINUM (Tables 1 - 54)
+                            </div>
+                            <div class="tables-grid" id="platinum-left-grid">
+                                <!-- Populated via JS -->
+                            </div>
                         </div>
-                        <div class="tables-grid" id="platinum-right-grid">
-                            <!-- Populated via JS -->
+
+                        <!-- Gold Section -->
+                        <div class="category-section">
+                            <div class="category-section-title gold-section-title">
+                                <span>♥</span> GOLD (Tables 55 - 126)
+                            </div>
+                            <div class="tables-grid" id="gold-left-grid">
+                                <!-- Populated via JS -->
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Gold Section -->
-                    <div class="category-section">
-                        <div class="category-section-title gold-section-title">
-                            <span>♥</span> GOLD (Tables 55 - 126)
+                    <!-- Standing Column (Middle) -->
+                    <div class="standing-column">
+                        <div class="side-header" style="color: #c77dff; border-color: rgba(157, 78, 221, 0.3);">♣ STANDING</div>
+                        <div class="standing-box" id="standing-box-left" onclick="openStandingBooking('left')">
+                            <div class="suit-icon">♣</div>
+                            <h3>Left Standing</h3>
+                            <p>Click to reserve</p>
                         </div>
-                        <div class="tables-grid" id="gold-right-grid">
-                            <!-- Populated via JS -->
+                        <div class="standing-box" id="standing-box-center" onclick="openStandingBooking('center')">
+                            <div class="suit-icon">♠</div>
+                            <h3>Center Standing</h3>
+                            <p>Click to reserve</p>
+                        </div>
+                        <div class="standing-box" id="standing-box-right" onclick="openStandingBooking('right')">
+                            <div class="suit-icon">♥</div>
+                            <h3>Right Standing</h3>
+                            <p>Click to reserve</p>
+                        </div>
+                    </div>
+
+                    <!-- Right Side Container (R) -->
+                    <div class="side-container">
+                        <div class="side-header right">♥ RIGHT WING - R</div>
+
+                        <!-- Platinum Section -->
+                        <div class="category-section">
+                            <div class="category-section-title platinum-section-title">
+                                <span>♠</span> PLATINUM (Tables 1 - 54)
+                            </div>
+                            <div class="tables-grid" id="platinum-right-grid">
+                                <!-- Populated via JS -->
+                            </div>
+                        </div>
+
+                        <!-- Gold Section -->
+                        <div class="category-section">
+                            <div class="category-section-title gold-section-title">
+                                <span>♥</span> GOLD (Tables 55 - 126)
+                            </div>
+                            <div class="tables-grid" id="gold-right-grid">
+                                <!-- Populated via JS -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1198,6 +1560,7 @@
                                 <td>{{ $booking->email }}</td>
                                 <td>{{ $booking->ticket_number }}</td>
                                 <td>
+                                    <button onclick="copyCustomerSeatUrl('{{ $booking->ticket_number }}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 700; margin-right: 6px;" title="Copy Customer Anonymous Seat Locator Link">🔗 Copy Link</button>
                                     <button onclick="confirmDeleteBooking('{{ $booking->id }}')" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem;">Delete</button>
                                 </td>
                             </tr>
@@ -1220,6 +1583,8 @@
                 <h3 class="modal-title" id="modal-table-title">Table Detail</h3>
                 <button class="close-modal" onclick="closeModal('seating-modal')">&times;</button>
             </div>
+            
+            <div class="modal-search-match-banner" id="modal-search-match-banner" style="display: none;"></div>
             
             <div class="seats-container">
                 <div class="modal-table-center" id="modal-table-center-id">L1</div>
@@ -1244,7 +1609,10 @@
                 <strong>Reserved by:</strong> <span id="bubble-name" style="color: var(--gold-primary);"></span><br>
                 <strong>Email:</strong> <span id="bubble-email"></span><br>
                 <strong>Ticket No:</strong> <span id="bubble-ticket" style="color: var(--gold-primary);"></span><br><br>
-                <button id="btn-delete-seat" class="btn-primary" style="background: var(--crimson-gradient); box-shadow: 0 4px 15px var(--ruby-glow); padding: 8px 12px; font-size: 0.85rem; color: #fff;" onclick="deleteActiveSeatBooking()">Delete Ticket</button>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button id="btn-copy-seat-url" class="btn-primary" style="background: var(--gold-gradient); color: #110e1c; font-weight: 800; padding: 8px 12px; font-size: 0.85rem;" onclick="copyActiveSeatUrl()">🔗 Copy Customer Link</button>
+                    <button id="btn-delete-seat" class="btn-primary" style="background: var(--crimson-gradient); box-shadow: 0 4px 15px var(--ruby-glow); padding: 8px 12px; font-size: 0.85rem; color: #fff;" onclick="deleteActiveSeatBooking()">Delete Ticket</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1305,6 +1673,21 @@
                 <strong>Ticket No:</strong> <span id="success-ticket" style="color: var(--gold-primary);"></span>
             </div>
 
+            <div style="background: rgba(0, 242, 254, 0.08); border: 1px solid rgba(0, 242, 254, 0.35); border-radius: 12px; padding: 12px; margin-bottom: 20px; text-align: left;">
+                <label style="font-size: 0.75rem; font-weight: 700; color: #00f2fe; text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 6px;">
+                    🔗 Customer Anonymous Seat Locator URL:
+                </label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="success-customer-url" readonly style="flex: 1; background: rgba(7, 5, 13, 0.9); border: 1px solid rgba(0, 242, 254, 0.4); border-radius: 8px; padding: 8px 12px; font-size: 0.8rem; color: #fff; font-family: monospace;" />
+                    <button type="button" class="btn-primary" style="padding: 8px 14px; font-size: 0.8rem; background: var(--gold-gradient); color: #110e1c; font-weight: 800; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;" onclick="copySuccessCustomerUrl()">
+                        Copy Link
+                    </button>
+                </div>
+                <small style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-top: 6px;">
+                    * Send this link to the customer. They will only see their own seat with zero other guests or sales data.
+                </small>
+            </div>
+
             <button class="btn-primary" onclick="closeModal('success-modal')">Done</button>
         </div>
     </div>
@@ -1336,6 +1719,7 @@
 
         // Global State
         let reservationsList = [];
+        window.reservationsList = reservationsList;
         let activeCategory = '';
         let activeSide = '';
         let activeTable = null;
@@ -1349,6 +1733,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     reservationsList = data.reservations || [];
+                    window.reservationsList = reservationsList;
                 } else {
                     console.error("Bookings API returned status:", response.status);
                 }
@@ -1394,6 +1779,26 @@
             const standingSold = reservationsList.filter(r => r.category === 'standing').length;
             const elStandingSold = document.getElementById('stats-standing-sold');
             if (elStandingSold) elStandingSold.innerText = standingSold;
+
+            // Total Tickets Sold Stats
+            const totalSold = platSold + goldSold + standingSold;
+            const totalSeatedCap = platCap + goldCap;
+            const totalSeatedSold = platSold + goldSold;
+            const totalSeatedPct = totalSeatedCap > 0 ? ((totalSeatedSold / totalSeatedCap) * 100).toFixed(1) : 0;
+
+            const elTotalSold = document.getElementById('stats-total-sold');
+            if (elTotalSold) elTotalSold.innerText = totalSold;
+
+            const elTotalSub = document.getElementById('stats-total-sub');
+            if (elTotalSub) {
+                elTotalSub.innerHTML = `<span style="color: var(--gold-primary);">♠ ${platSold}</span> &bull; <span style="color: #ff758f;">♥ ${goldSold}</span> &bull; <span style="color: #c77dff;">♣ ${standingSold}</span>`;
+            }
+
+            const elTotalProg = document.getElementById('stats-total-progress');
+            if (elTotalProg) elTotalProg.style.width = `${totalSeatedPct}%`;
+
+            const elHeaderTotal = document.getElementById('header-total-sold');
+            if (elHeaderTotal) elHeaderTotal.innerText = totalSold;
         }
 
         // Render Table Grids
@@ -1402,6 +1807,10 @@
             renderSectionGrid('platinum', 'right', 1, 54, 'platinum-right-grid');
             renderSectionGrid('gold', 'left', 55, 126, 'gold-left-grid');
             renderSectionGrid('gold', 'right', 55, 126, 'gold-right-grid');
+
+            if (window.apply2DSearchHighlights) {
+                window.apply2DSearchHighlights();
+            }
         }
 
         function renderSectionGrid(category, side, start, end, elementId) {
@@ -1412,8 +1821,14 @@
             for (let i = start; i <= end; i++) {
                 const btn = document.createElement('button');
                 btn.className = 'table-btn';
+                btn.id = `table-btn-${side}-${i}`;
+                btn.setAttribute('data-category', category);
+                btn.setAttribute('data-side', side);
+                btn.setAttribute('data-table', i);
+
                 const label = side.toUpperCase().substring(0,1) + i;
                 btn.innerText = label;
+                btn.setAttribute('data-label', label);
 
                 const bookingsForTable = reservationsList.filter(r => 
                     r.category && r.category.toLowerCase() === category.toLowerCase() && 
@@ -1436,6 +1851,11 @@
             }
         }
 
+        function escapeModalHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
         // Seating Modal Setup
         function openSeatingModal(category, side, tableNumber) {
             activeCategory = category;
@@ -1448,7 +1868,11 @@
             document.getElementById('modal-table-title').innerText = title;
             document.getElementById('modal-table-center-id').innerText = side.toUpperCase().substring(0,1) + tableNumber;
 
-            const bookings = reservationsList.filter(r => r.category === category && r.side === side && r.table_number === tableNumber);
+            const bookings = reservationsList.filter(r => 
+                r.category && r.category.toLowerCase() === category.toLowerCase() && 
+                r.side && r.side.toLowerCase() === side.toLowerCase() && 
+                parseInt(r.table_number, 10) === parseInt(tableNumber, 10)
+            );
             const isFullTableBooked = bookings.some(r => r.is_full_table);
 
             const bubble = document.getElementById('seat-detail-bubble');
@@ -1456,6 +1880,24 @@
 
             const reserveFullBtn = document.getElementById('btn-reserve-full');
             const hint = document.getElementById('seat-select-hint');
+
+            // Search Match Banner in Modal
+            const matchBanner = document.getElementById('modal-search-match-banner');
+            const tableMatches = window.getCurrentSearchMatchesForTable ? window.getCurrentSearchMatchesForTable(category, side, tableNumber) : [];
+
+            if (tableMatches.length > 0) {
+                const firstMatch = tableMatches[0];
+                const res = firstMatch.reservation;
+                if (res) {
+                    const seatPart = res.is_full_table ? 'Full Table (8 Seats)' : (res.seat_number ? `Seat ${res.seat_number}` : '');
+                    matchBanner.innerHTML = `🔍 <strong>Search Match:</strong> ${escapeModalHtml(res.name)} ${seatPart ? '• ' + seatPart : ''} • Order: <span style="color:#fff; font-family:monospace;">${escapeModalHtml(res.ticket_number)}</span>`;
+                } else {
+                    matchBanner.innerHTML = `🔍 <strong>Search Match:</strong> Table ${side.toUpperCase().substring(0,1)}${tableNumber}`;
+                }
+                matchBanner.style.display = 'block';
+            } else {
+                if (matchBanner) matchBanner.style.display = 'none';
+            }
 
             if (isFullTableBooked) {
                 const fullBooking = bookings.find(r => r.is_full_table);
@@ -1465,6 +1907,9 @@
                 for (let s = 1; s <= 8; s++) {
                     const seatEl = document.getElementById(`seat-${s}`);
                     seatEl.className = 'seat-circle reserved';
+                    if (tableMatches.length > 0) {
+                        seatEl.classList.add('search-matched-seat');
+                    }
                     seatEl.onclick = () => showBubble(fullBooking);
                 }
             } else {
@@ -1473,10 +1918,14 @@
 
                 for (let s = 1; s <= 8; s++) {
                     const seatEl = document.getElementById(`seat-${s}`);
-                    const seatBooking = bookings.find(r => r.seat_number === s);
+                    const seatBooking = bookings.find(r => parseInt(r.seat_number, 10) === s);
 
                     if (seatBooking) {
                         seatEl.className = 'seat-circle reserved';
+                        const isMatchedSeat = tableMatches.some(m => m.seatNumber === s || (m.reservation && parseInt(m.reservation.seat_number, 10) === s));
+                        if (isMatchedSeat) {
+                            seatEl.classList.add('search-matched-seat');
+                        }
                         seatEl.onclick = () => showBubble(seatBooking);
                     } else {
                         seatEl.className = 'seat-circle available';
@@ -1485,9 +1934,20 @@
                 }
             }
 
+            // Automatically open details bubble if search match is on this table
+            if (tableMatches.length > 0) {
+                const matchedBooking = bookings.find(b => tableMatches.some(m => m.reservation && m.reservation.id === b.id)) || (isFullTableBooked ? bookings.find(r => r.is_full_table) : null);
+                if (matchedBooking) {
+                    showBubble(matchedBooking);
+                }
+            }
+
             updateSelectedSeatsButton();
             openModal('seating-modal');
         }
+
+        window.openSeatingModal = openSeatingModal;
+        window.openStandingBooking = openStandingBooking;
 
         function toggleSeatSelection(seatNumber) {
             const seatEl = document.getElementById(`seat-${seatNumber}`);
@@ -1650,6 +2110,11 @@
                     }
                     document.getElementById('success-details').innerText = detailsText;
                     
+                    const primaryTicket = data.reservation.ticket_number;
+                    const customerUrl = `${window.location.origin}/seat/${encodeURIComponent(primaryTicket)}`;
+                    const urlInput = document.getElementById('success-customer-url');
+                    if (urlInput) urlInput.value = customerUrl;
+                    
                     openModal('success-modal');
                     
                     await fetchBookingsAndRender();
@@ -1696,6 +2161,7 @@
                         <td>${b.email}</td>
                         <td>${b.ticket_number}</td>
                         <td>
+                            <button onclick="copyCustomerSeatUrl('${encodeURIComponent(b.ticket_number)}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 700; margin-right: 6px;" title="Copy Customer Anonymous Seat Locator Link">🔗 Copy Link</button>
                             <button onclick="confirmDeleteBooking('${b.id}')" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem;">Delete</button>
                         </td>
                     `;
@@ -1786,6 +2252,43 @@
             }, 4000);
         }
 
+        function copyCustomerSeatUrl(ticketNumber) {
+            const cleanTicket = decodeURIComponent(ticketNumber);
+            const url = `${window.location.origin}/seat/${encodeURIComponent(cleanTicket)}`;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast("Customer seat link copied to clipboard!", "success");
+                }).catch(() => {
+                    prompt("Copy customer seat locator link:", url);
+                });
+            } else {
+                prompt("Copy customer seat locator link:", url);
+            }
+        }
+        window.copyCustomerSeatUrl = copyCustomerSeatUrl;
+
+        function copyActiveSeatUrl() {
+            if (!activeBooking || !activeBooking.ticket_number) {
+                showToast("No active booking selected.", "error");
+                return;
+            }
+            copyCustomerSeatUrl(activeBooking.ticket_number);
+        }
+
+        function copySuccessCustomerUrl() {
+            const input = document.getElementById('success-customer-url');
+            if (!input || !input.value) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(input.value).then(() => {
+                    showToast("Customer seat link copied to clipboard!", "success");
+                }).catch(() => {
+                    prompt("Copy customer seat locator link:", input.value);
+                });
+            } else {
+                prompt("Copy customer seat locator link:", input.value);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             renderGrids();
             fetchBookingsAndRender();
@@ -1805,5 +2308,8 @@
 
     <!-- Toast Notifications Container -->
     <div class="toast-container" id="toast-container"></div>
+
+    <!-- Universal Seat & Guest Search (100% Self-Hosted & Lightweight) -->
+    <script src="{{ asset('js/seatsearch.js') }}"></script>
 </body>
 </html>
