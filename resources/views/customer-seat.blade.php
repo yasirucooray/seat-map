@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>KALABARA (කලාබර) - Customer Seat Locator</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -34,6 +34,12 @@
             margin: 0;
             padding: 0;
             font-family: 'Outfit', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
         }
 
         body {
@@ -42,19 +48,19 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
             background-image: 
                 radial-gradient(circle at 50% 0%, rgba(201, 24, 74, 0.18) 0%, transparent 60%),
                 radial-gradient(circle at 10% 90%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
                 radial-gradient(circle at 90% 90%, rgba(128, 15, 47, 0.12) 0%, transparent 50%);
             background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
         }
 
         /* Top Brand Navigation */
         .brand-nav {
-            background: rgba(14, 11, 23, 0.85);
+            background: rgba(14, 11, 23, 0.88);
             border-bottom: 1px solid var(--border-gold);
-            padding: 16px 24px;
+            padding: 14px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -66,7 +72,7 @@
 
         .brand-logo {
             font-family: 'Cinzel', serif;
-            font-size: 1.4rem;
+            font-size: 1.35rem;
             font-weight: 800;
             letter-spacing: 0.12em;
             background: var(--gold-gradient);
@@ -91,7 +97,7 @@
 
         /* Main Container */
         .main-wrapper {
-            max-width: 1400px;
+            max-width: 1440px;
             margin: 0 auto;
             padding: 24px 20px 80px;
             width: 100%;
@@ -104,7 +110,7 @@
             border: 1.5px solid var(--gold-primary);
             border-radius: var(--card-radius);
             padding: 24px 28px;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7), 0 0 30px var(--gold-glow);
             position: relative;
             overflow: hidden;
@@ -130,11 +136,11 @@
         }
 
         .hero-welcome-badge {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 700;
             color: var(--gold-primary);
             text-transform: uppercase;
-            letter-spacing: 0.15em;
+            letter-spacing: 0.12em;
             margin-bottom: 6px;
             display: flex;
             align-items: center;
@@ -142,11 +148,12 @@
         }
 
         .hero-guest-name {
-            font-size: 1.9rem;
+            font-size: 1.85rem;
             font-weight: 800;
             color: #ffffff;
             margin-bottom: 14px;
             letter-spacing: -0.01em;
+            word-break: break-word;
         }
 
         .hero-chips-row {
@@ -217,7 +224,7 @@
             border: 1px solid var(--border-gold);
             border-radius: var(--card-radius);
             padding: 24px;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
 
@@ -237,6 +244,7 @@
             color: #fff;
             font-size: 0.95rem;
             outline: none;
+            min-width: 240px;
         }
 
         .lookup-input:focus {
@@ -252,10 +260,12 @@
             padding: 12px 24px;
             border-radius: 12px;
             cursor: pointer;
+            font-size: 0.95rem;
         }
 
         /* -----------------------------------------------------------------
-           EXACT ARENA SEATING DESIGN MATCHING ADMIN DASHBOARD
+           EXACT ARENA SEATING DESIGN MATCHING ADMIN DASHBOARD (1:1 PARITY)
+           Both Web and Mobile show EXACT 9 columns and identical row counts!
            ----------------------------------------------------------------- */
         .arena-card {
             background: var(--bg-card);
@@ -264,16 +274,17 @@
             padding: 28px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(12px);
+            position: relative;
         }
 
         .arena-header-strip {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 18px;
             flex-wrap: wrap;
             gap: 12px;
-            padding-bottom: 16px;
+            padding-bottom: 14px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
@@ -285,7 +296,121 @@
             letter-spacing: 0.05em;
         }
 
-        /* Stage Design */
+        /* Venue Pan Navigator (Pills + Swipe Guide) */
+        .arena-pan-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pan-pills-row {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: 2px;
+        }
+        .pan-pills-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        .pan-pill-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: var(--text-muted);
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            font-family: 'Outfit', sans-serif;
+            flex-shrink: 0;
+        }
+
+        .pan-pill-btn:hover, .pan-pill-btn:active {
+            background: rgba(212, 175, 55, 0.15);
+            border-color: var(--gold-primary);
+            color: #fff;
+        }
+
+        .pan-pill-btn.highlight-pill {
+            background: var(--gold-gradient);
+            color: #07060c;
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 15px var(--gold-glow);
+        }
+
+        .pill-badge {
+            background: #e63946;
+            color: #fff;
+            font-size: 0.58rem;
+            font-weight: 900;
+            padding: 1px 6px;
+            border-radius: 10px;
+            letter-spacing: 0.04em;
+        }
+        .pan-pill-btn.highlight-pill .pill-badge {
+            background: #07060c;
+            color: var(--gold-primary);
+        }
+
+        .pan-hint-text {
+            font-size: 0.74rem;
+            color: var(--gold-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(212, 175, 55, 0.08);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        /* -------------------------------------------------------------
+           HORIZONTAL SCROLLING ARENA VIEWPORT (Exact 1:1 Web Layout)
+           Preserves 3-Column Wings & Standing on all screen sizes!
+           ------------------------------------------------------------- */
+        .arena-scroll-container {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(212, 175, 55, 0.4) transparent;
+            padding-bottom: 16px;
+            border-radius: 16px;
+        }
+
+        .arena-scroll-container::-webkit-scrollbar {
+            height: 7px;
+        }
+        .arena-scroll-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+        }
+        .arena-scroll-container::-webkit-scrollbar-thumb {
+            background: var(--gold-gradient);
+            border-radius: 10px;
+        }
+
+        /* Inner Canvas: Fixes width so 9 columns and rows remain perfectly intact */
+        .arena-inner-canvas {
+            min-width: 980px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Stage Design (Exact Admin Style) */
         .stage-container {
             width: 100%;
             margin-bottom: 30px;
@@ -298,11 +423,11 @@
             border: 2px solid var(--ruby-red);
             box-shadow: 0 0 35px var(--ruby-glow), inset 0 0 20px rgba(230, 57, 70, 0.2);
             border-radius: 12px;
-            padding: 16px 60px;
+            padding: 16px 80px;
             text-align: center;
             position: relative;
-            width: 80%;
-            max-width: 600px;
+            width: 70%;
+            max-width: 620px;
         }
 
         .stage-title {
@@ -322,12 +447,12 @@
             text-transform: uppercase;
         }
 
-        /* Arena Layout Grid */
+        /* 3-Column Arena Layout (Left Wing - Standing - Right Wing) */
         .arena-layout {
             display: grid;
-            grid-template-columns: 1fr 140px 1fr;
+            grid-template-columns: 1fr 180px 1fr;
             gap: 24px;
-            margin-top: 20px;
+            align-items: start;
         }
 
         .side-container {
@@ -373,22 +498,23 @@
         .platinum-section-title { color: var(--gold-primary); }
         .gold-section-title { color: #ff758f; }
 
+        /* -------------------------------------------------------------
+           EXACT 9 COLUMNS GRID (Matches Web View 1:1)
+           - Platinum 1 - 54 = Exactly 6 rows × 9 columns
+           - Gold 55 - 126   = Exactly 8 rows × 9 columns
+           ------------------------------------------------------------- */
         .tables-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+            grid-template-columns: repeat(9, 1fr) !important;
             gap: 8px;
         }
 
-        /* -------------------------------------------------------------
-           LOCKED TABLES VS CUSTOMER TABLE
-           All other tables are locked and generic (no reserved colors)
-           ------------------------------------------------------------- */
         .table-btn {
             width: 100%;
-            height: 42px;
-            border-radius: 10px;
+            aspect-ratio: 1;
+            border-radius: 8px;
             font-weight: 700;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-family: 'Outfit', sans-serif;
             border: 1px solid rgba(255, 255, 255, 0.08);
             background: rgba(255, 255, 255, 0.02);
@@ -398,6 +524,9 @@
             user-select: none;
             transition: all 0.2s ease;
             position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         /* CUSTOMER HIGHLIGHTED TABLE (Active & Clickable) */
@@ -419,6 +548,15 @@
             100% { transform: scale(1.25); box-shadow: 0 0 35px var(--gold-glow), 0 0 60px rgba(212, 175, 55, 0.6); }
         }
 
+        .locate-bounce {
+            animation: locatePulse 0.5s ease 3 !important;
+        }
+
+        @keyframes locatePulse {
+            0%, 100% { transform: scale(1.18); }
+            50% { transform: scale(1.36); filter: brightness(1.25); }
+        }
+
         .customer-pin-badge {
             position: absolute;
             top: -24px;
@@ -426,7 +564,7 @@
             transform: translateX(-50%);
             background: var(--gold-gradient);
             color: #07060c;
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             font-weight: 900;
             padding: 2px 7px;
             border-radius: 6px;
@@ -459,6 +597,7 @@
             justify-content: center;
             flex-grow: 1;
             opacity: 0.5;
+            transition: all 0.2s ease;
         }
 
         .standing-box .suit-icon {
@@ -489,8 +628,39 @@
         .standing-box.customer-my-standing .suit-icon { color: var(--gold-primary); }
         .standing-box.customer-my-standing h3 { color: var(--gold-primary); }
 
+        /* Floating Sticky Seat Button for Quick Centering on Mobile */
+        .floating-seat-btn {
+            position: fixed;
+            bottom: 22px;
+            right: 18px;
+            z-index: 95;
+            background: var(--gold-gradient);
+            color: #07060c;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 0.88rem;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 20px var(--gold-glow);
+            cursor: pointer;
+            transition: transform 0.25s ease;
+            animation: floatGlow 2.2s infinite alternate;
+        }
+
+        .floating-seat-btn:active {
+            transform: scale(0.96);
+        }
+
+        @keyframes floatGlow {
+            0% { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), 0 0 15px var(--gold-glow); }
+            100% { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.8), 0 0 30px rgba(212, 175, 55, 0.6); }
+        }
+
         /* -------------------------------------------------------------
-           SEATING RING MODAL - EXACT SAME 105px RADIUS DESIGN AS ADMIN
+           SEATING RING MODAL - RESPONSIVE SCALED 105px TRIGONOMETRY
            ------------------------------------------------------------- */
         .modal-overlay {
             position: fixed;
@@ -526,6 +696,8 @@
             position: relative;
             transform: scale(0.92);
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 92vh;
+            overflow-y: auto;
         }
 
         .modal-overlay.active .modal-content {
@@ -536,7 +708,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             padding-bottom: 12px;
         }
@@ -555,18 +727,31 @@
             font-size: 1.8rem;
             cursor: pointer;
             line-height: 1;
+            padding: 4px 8px;
         }
         .close-modal:hover { color: var(--ruby-red); }
+
+        /* Responsive Scaler Wrapper for Round Table */
+        .seats-wrapper-scaler {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 20px;
+            overflow: visible;
+        }
 
         /* 8 Seats Table Layout (Exact Admin Dimensions) */
         .seats-container {
             position: relative;
             width: 300px;
             height: 300px;
-            margin: 0 auto 20px auto;
+            margin: 0 auto;
             background: rgba(255, 255, 255, 0.02);
             border: 2px dashed rgba(212, 175, 55, 0.2);
             border-radius: 50%;
+            flex-shrink: 0;
+            transform-origin: center center;
         }
 
         .modal-table-center {
@@ -642,15 +827,135 @@
             line-height: 1.5;
         }
 
+        /* -------------------------------------------------------------
+           RESPONSIVE VIEWPORT TWEAKS (Container & Modal Fit)
+           Row & column counts remain 100% locked and identical!
+           ------------------------------------------------------------- */
         @media (max-width: 900px) {
-            .arena-layout {
+            .floating-seat-btn {
+                display: inline-flex;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .brand-nav {
+                padding: 12px 16px;
+            }
+            .brand-logo {
+                font-size: 1.15rem;
+            }
+            .main-wrapper {
+                padding: 14px 10px 90px;
+            }
+            .customer-hero-card {
+                padding: 18px 16px;
+                border-radius: 16px;
+                margin-bottom: 18px;
+            }
+            .hero-flex {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
+            }
+            .hero-guest-name {
+                font-size: 1.45rem;
+                margin-bottom: 12px;
+                line-height: 1.25;
+            }
+            .hero-chips-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            .hero-chip {
+                padding: 7px 10px;
+                border-radius: 10px;
+            }
+            .chip-label {
+                font-size: 0.62rem;
+            }
+            .chip-val {
+                font-size: 0.88rem;
+            }
+            .btn-center-seat {
+                width: 100%;
+                justify-content: center;
+                padding: 13px 18px;
+                font-size: 0.92rem;
+            }
+            .arena-card {
+                padding: 18px 12px;
+                border-radius: 16px;
+            }
+            .arena-header-strip {
+                margin-bottom: 14px;
+            }
+            .arena-header-title {
+                font-size: 1.1rem;
+            }
+            .pan-pills-row {
+                width: 100%;
+            }
+            .pan-hint-text {
+                width: 100%;
+                justify-content: center;
+                font-size: 0.72rem;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .lookup-box {
+                padding: 18px 14px;
+                border-radius: 16px;
+            }
+            .lookup-form {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .lookup-input, .lookup-btn {
+                width: 100%;
+                min-width: 0;
+            }
+        }
+
+        @media (max-width: 440px) {
+            .modal-overlay {
+                padding: 12px;
+            }
+            .modal-content {
+                padding: 20px 14px;
+                border-radius: 20px;
+            }
+            .modal-title {
+                font-size: 1.1rem;
+            }
+            .seats-wrapper-scaler {
+                height: 270px;
+                margin-bottom: 10px;
+            }
+            .seats-container {
+                transform: scale(0.86);
+            }
+            .floating-seat-btn {
+                bottom: 16px;
+                right: 14px;
+                padding: 10px 16px;
+                font-size: 0.82rem;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .hero-chips-row {
                 grid-template-columns: 1fr;
             }
-            .standing-column {
-                flex-direction: row;
+            .seats-wrapper-scaler {
+                height: 240px;
             }
-            .standing-box {
-                flex: 1;
+            .seats-container {
+                transform: scale(0.76);
+            }
+            .modal-content {
+                padding: 16px 10px;
             }
         }
     </style>
@@ -700,7 +1005,7 @@
                                     <span class="chip-label">Your Reserved Seats</span>
                                     <span class="chip-val gold">
                                         @if($customerInfo['is_full_table'])
-                                            Full Table (All 8 Seats)
+                                             Full Table (All 8 Seats)
                                         @elseif(count($customerInfo['seats']) > 0)
                                             Seat {{ implode(', Seat ', $customerInfo['seats']) }}
                                         @else
@@ -756,104 +1061,154 @@
                 </div>
             </div>
 
-            <!-- Stage Banner (Exact Admin Style) -->
-            <div class="stage-container">
-                <div class="stage-banner">
-                    <div class="stage-title">♠ STAGE ♠</div>
-                    <div class="stage-subtitle">KALABARA LIVE &bull; WATERS EDGE</div>
+            <!-- Floor Plan Pan Navigator Pills (Jump to Left, Center Stage, Right) -->
+            <div class="arena-pan-nav">
+                <div class="pan-pills-row">
+                    <button type="button" class="pan-pill-btn {{ ($customerInfo && $customerInfo['side'] === 'left' && $customerInfo['category'] !== 'standing') ? 'highlight-pill' : '' }}" onclick="panToSection('left')">
+                        <span>♠</span> Left Wing (L1 - L126)
+                        @if($customerInfo && $customerInfo['side'] === 'left' && $customerInfo['category'] !== 'standing')
+                            <span class="pill-badge">YOUR TABLE</span>
+                        @endif
+                    </button>
+                    <button type="button" class="pan-pill-btn {{ ($customerInfo && $customerInfo['category'] === 'standing') ? 'highlight-pill' : '' }}" onclick="panToSection('center')">
+                        <span>♠</span> Center Stage & Standing
+                        @if($customerInfo && $customerInfo['category'] === 'standing')
+                            <span class="pill-badge">YOUR ZONE</span>
+                        @endif
+                    </button>
+                    <button type="button" class="pan-pill-btn {{ ($customerInfo && $customerInfo['side'] === 'right' && $customerInfo['category'] !== 'standing') ? 'highlight-pill' : '' }}" onclick="panToSection('right')">
+                        <span>♥</span> Right Wing (R1 - R126)
+                        @if($customerInfo && $customerInfo['side'] === 'right' && $customerInfo['category'] !== 'standing')
+                            <span class="pill-badge">YOUR TABLE</span>
+                        @endif
+                    </button>
+                </div>
+                <div class="pan-hint-text">
+                    <span>↔</span> Swipe floor plan &bull; 9 Columns &bull; Exact stage layout
                 </div>
             </div>
 
-            <!-- 2D Arena Floor Plan -->
-            <div class="arena-layout">
-                <!-- Left Wing -->
-                <div class="side-container">
-                    <div class="side-header left">♠ LEFT WING - L</div>
+            <!-- Horizontal Scroll Viewport: Keeps exact 3-column & 9-column geometry 100% intact -->
+            <div class="arena-scroll-container" id="arena-scroll-container">
+                <div class="arena-inner-canvas">
 
-                    <!-- Platinum 1 - 54 -->
-                    <div class="category-section">
-                        <div class="category-section-title platinum-section-title">
-                            <span>♠</span> PLATINUM (Tables 1 - 54)
+                    <!-- Stage Banner (Exact Admin Style) -->
+                    <div class="stage-container" id="arena-stage-banner">
+                        <div class="stage-banner">
+                            <div class="stage-title">♠ STAGE ♠</div>
+                            <div class="stage-subtitle">KALABARA LIVE &bull; WATERS EDGE</div>
                         </div>
-                        <div class="tables-grid" id="customer-plat-left"></div>
                     </div>
 
-                    <!-- Gold 55 - 126 -->
-                    <div class="category-section">
-                        <div class="category-section-title gold-section-title">
-                            <span>♥</span> GOLD (Tables 55 - 126)
+                    <!-- 3-Column 2D Arena Floor Plan (Left Wing | Standing | Right Wing) -->
+                    <div class="arena-layout">
+                        <!-- Left Wing -->
+                        <div class="side-container" id="arena-left-wing">
+                            <div class="side-header left">♠ LEFT WING - L</div>
+
+                            <!-- Platinum 1 - 54 (Exact 6 rows × 9 columns) -->
+                            <div class="category-section">
+                                <div class="category-section-title platinum-section-title">
+                                    <span>♠</span> PLATINUM (Tables 1 - 54 &bull; 6 Rows &times; 9 Cols)
+                                </div>
+                                <div class="tables-grid" id="customer-plat-left"></div>
+                            </div>
+
+                            <!-- Gold 55 - 126 (Exact 8 rows × 9 columns) -->
+                            <div class="category-section">
+                                <div class="category-section-title gold-section-title">
+                                    <span>♥</span> GOLD (Tables 55 - 126 &bull; 8 Rows &times; 9 Cols)
+                                </div>
+                                <div class="tables-grid" id="customer-gold-left"></div>
+                            </div>
                         </div>
-                        <div class="tables-grid" id="customer-gold-left"></div>
-                    </div>
-                </div>
 
-                <!-- Standing Column (Middle) -->
-                <div class="standing-column">
-                    <div class="side-header" style="color: #c77dff; border-color: rgba(157, 78, 221, 0.3);">♣ STANDING</div>
+                        <!-- Standing Column (Middle) -->
+                        <div class="standing-column" id="arena-standing-col">
+                            <div class="side-header" style="color: #c77dff; border-color: rgba(157, 78, 221, 0.3);">♣ STANDING</div>
 
-                    <div class="standing-box {{ ($customerInfo && $customerInfo['category'] === 'standing' && $customerInfo['side'] === 'left') ? 'customer-my-standing' : '' }}" 
-                         id="cstanding-left" onclick="openCustomerStanding('Left Standing')">
-                        <div class="suit-icon">♣</div>
-                        <h3>Left Standing</h3>
-                    </div>
+                            <div class="standing-box {{ ($customerInfo && $customerInfo['category'] === 'standing' && $customerInfo['side'] === 'left') ? 'customer-my-standing' : '' }}" 
+                                 id="cstanding-left" onclick="openCustomerStanding('Left Standing')">
+                                <div class="suit-icon">♣</div>
+                                <h3>Left Standing</h3>
+                            </div>
 
-                    <div class="standing-box {{ ($customerInfo && $customerInfo['category'] === 'standing' && $customerInfo['side'] === 'center') ? 'customer-my-standing' : '' }}" 
-                         id="cstanding-center" onclick="openCustomerStanding('Center Standing')">
-                        <div class="suit-icon">♠</div>
-                        <h3>Center Standing</h3>
-                    </div>
+                            <div class="standing-box {{ ($customerInfo && $customerInfo['category'] === 'standing' && $customerInfo['side'] === 'center') ? 'customer-my-standing' : '' }}" 
+                                 id="cstanding-center" onclick="openCustomerStanding('Center Standing')">
+                                <div class="suit-icon">♠</div>
+                                <h3>Center Standing</h3>
+                            </div>
 
-                    <div class="standing-box {{ ($customerInfo && $customerInfo['category'] === 'standing' && $customerInfo['side'] === 'right') ? 'customer-my-standing' : '' }}" 
-                         id="cstanding-right" onclick="openCustomerStanding('Right Standing')">
-                        <div class="suit-icon">♥</div>
-                        <h3>Right Standing</h3>
-                    </div>
-                </div>
-
-                <!-- Right Wing -->
-                <div class="side-container">
-                    <div class="side-header right">♥ RIGHT WING - R</div>
-
-                    <!-- Platinum 1 - 54 -->
-                    <div class="category-section">
-                        <div class="category-section-title platinum-section-title">
-                            <span>♠</span> PLATINUM (Tables 1 - 54)
+                            <div class="standing-box {{ ($customerInfo && $customerInfo['category'] === 'standing' && $customerInfo['side'] === 'right') ? 'customer-my-standing' : '' }}" 
+                                 id="cstanding-right" onclick="openCustomerStanding('Right Standing')">
+                                <div class="suit-icon">♥</div>
+                                <h3>Right Standing</h3>
+                            </div>
                         </div>
-                        <div class="tables-grid" id="customer-plat-right"></div>
+
+                        <!-- Right Wing -->
+                        <div class="side-container" id="arena-right-wing">
+                            <div class="side-header right">♥ RIGHT WING - R</div>
+
+                            <!-- Platinum 1 - 54 (Exact 6 rows × 9 columns) -->
+                            <div class="category-section">
+                                <div class="category-section-title platinum-section-title">
+                                    <span>♠</span> PLATINUM (Tables 1 - 54 &bull; 6 Rows &times; 9 Cols)
+                                </div>
+                                <div class="tables-grid" id="customer-plat-right"></div>
+                            </div>
+
+                            <!-- Gold 55 - 126 (Exact 8 rows × 9 columns) -->
+                            <div class="category-section">
+                                <div class="category-section-title gold-section-title">
+                                    <span>♥</span> GOLD (Tables 55 - 126 &bull; 8 Rows &times; 9 Cols)
+                                </div>
+                                <div class="tables-grid" id="customer-gold-right"></div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Gold 55 - 126 -->
-                    <div class="category-section">
-                        <div class="category-section-title gold-section-title">
-                            <span>♥</span> GOLD (Tables 55 - 126)
-                        </div>
-                        <div class="tables-grid" id="customer-gold-right"></div>
-                    </div>
                 </div>
             </div>
         </section>
 
     </main>
 
-    <!-- Customer Seating Details Ring Modal (Exact Admin Dimensions & Trigonometry) -->
-    <div class="modal-overlay" id="customer-seating-modal">
+    <!-- Floating Quick-Jump Pill Button on Mobile -->
+    @if($customerInfo)
+        <button type="button" class="floating-seat-btn" id="floating-seat-btn" onclick="locateCustomerSeat()" title="Jump to your table">
+            <span>📍</span>
+            <span>
+                @if($customerInfo['category'] === 'standing')
+                    Standing ({{ ucfirst($customerInfo['side']) }})
+                @else
+                    Table {{ strtoupper(substr($customerInfo['side'], 0, 1)) }}{{ $customerInfo['table_number'] }}
+                @endif
+            </span>
+        </button>
+    @endif
+
+    <!-- Customer Seating Details Ring Modal (Responsive Scaled Geometry) -->
+    <div class="modal-overlay" id="customer-seating-modal" onclick="handleOverlayClick(event)">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title" id="cust-modal-title">Table Detail</h3>
-                <button type="button" class="close-modal" onclick="closeCustomerModal()">&times;</button>
+                <button type="button" class="close-modal" onclick="closeCustomerModal()" aria-label="Close modal">&times;</button>
             </div>
 
-            <div class="seats-container">
-                <div class="modal-table-center" id="cust-modal-center-id">L1</div>
-                <!-- 8 Seats positioned absolutely using exact admin trigonometry -->
-                <div class="seat-circle" id="seat-1">1</div>
-                <div class="seat-circle" id="seat-2">2</div>
-                <div class="seat-circle" id="seat-3">3</div>
-                <div class="seat-circle" id="seat-4">4</div>
-                <div class="seat-circle" id="seat-5">5</div>
-                <div class="seat-circle" id="seat-6">6</div>
-                <div class="seat-circle" id="seat-7">7</div>
-                <div class="seat-circle" id="seat-8">8</div>
+            <div class="seats-wrapper-scaler">
+                <div class="seats-container">
+                    <div class="modal-table-center" id="cust-modal-center-id">L1</div>
+                    <!-- 8 Seats positioned absolutely using exact admin trigonometry -->
+                    <div class="seat-circle" id="seat-1">1</div>
+                    <div class="seat-circle" id="seat-2">2</div>
+                    <div class="seat-circle" id="seat-3">3</div>
+                    <div class="seat-circle" id="seat-4">4</div>
+                    <div class="seat-circle" id="seat-5">5</div>
+                    <div class="seat-circle" id="seat-6">6</div>
+                    <div class="seat-circle" id="seat-7">7</div>
+                    <div class="seat-circle" id="seat-8">8</div>
+                </div>
             </div>
 
             <div class="seat-hint-box" id="cust-modal-hint-box">
@@ -892,7 +1247,30 @@
             }
         });
 
-        // Render Grids: All other tables are LOCKED and NEUTRAL (no reserved colors)
+        // Jump / Pan to section within arena scroll container
+        function panToSection(section) {
+            const scrollContainer = document.getElementById('arena-scroll-container');
+            if (!scrollContainer) return;
+
+            let targetLeft = 0;
+            if (section === 'left') {
+                targetLeft = 0;
+            } else if (section === 'center') {
+                const centerEl = document.getElementById('arena-standing-col');
+                if (centerEl) {
+                    targetLeft = (centerEl.offsetLeft + (centerEl.clientWidth / 2)) - (scrollContainer.clientWidth / 2);
+                }
+            } else if (section === 'right') {
+                targetLeft = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+            }
+
+            scrollContainer.scrollTo({
+                left: Math.max(0, targetLeft),
+                behavior: 'smooth'
+            });
+        }
+
+        // Render Grids: Exact 9 Columns with 6 rows (Platinum) and 8 rows (Gold)
         function renderGrids() {
             renderSection('platinum', 'left', 1, 54, 'customer-plat-left');
             renderSection('platinum', 'right', 1, 54, 'customer-plat-right');
@@ -970,18 +1348,18 @@
             // Summary text
             if (myBooking.is_full_table) {
                 hintBox.innerHTML = `
-                    <div style="font-weight: 800; color: var(--gold-primary); font-size: 1rem; margin-bottom: 4px;">
+                    <div style="font-weight: 800; color: var(--gold-primary); font-size: 0.98rem; margin-bottom: 4px;">
                         ★ Full Table Reserved (All 8 Seats)
                     </div>
-                    <div>Guest: <strong>${myBooking.name}</strong> &bull; Ticket: <span style="font-family: monospace;">${myBooking.ticket_number}</span></div>
+                    <div style="font-size: 0.84rem;">Guest: <strong>${myBooking.name}</strong> &bull; Ticket: <span style="font-family: monospace;">${myBooking.ticket_number}</span></div>
                 `;
             } else {
                 const seatsList = myBooking.seats && myBooking.seats.length > 0 ? myBooking.seats.join(', Seat ') : 'Reserved';
                 hintBox.innerHTML = `
-                    <div style="font-weight: 800; color: var(--gold-primary); font-size: 1rem; margin-bottom: 4px;">
+                    <div style="font-weight: 800; color: var(--gold-primary); font-size: 0.98rem; margin-bottom: 4px;">
                         ★ Your Reserved Seats: Seat ${seatsList}
                     </div>
-                    <div>Guest: <strong>${myBooking.name}</strong> &bull; Ticket: <span style="font-family: monospace;">${myBooking.ticket_number}</span></div>
+                    <div style="font-size: 0.84rem;">Guest: <strong>${myBooking.name}</strong> &bull; Ticket: <span style="font-family: monospace;">${myBooking.ticket_number}</span></div>
                 `;
             }
 
@@ -990,6 +1368,12 @@
 
         function closeCustomerModal() {
             document.getElementById('customer-seating-modal').classList.remove('active');
+        }
+
+        function handleOverlayClick(e) {
+            if (e.target.id === 'customer-seating-modal') {
+                closeCustomerModal();
+            }
         }
 
         function openCustomerStanding(zoneName) {
@@ -1009,18 +1393,37 @@
             }
 
             if (target) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const scrollContainer = document.getElementById('arena-scroll-container');
+                if (scrollContainer) {
+                    // Center the table horizontally in the arena scroll container
+                    const targetLeftInCanvas = target.offsetLeft;
+                    const targetWidth = target.clientWidth;
+                    const containerWidth = scrollContainer.clientWidth;
+                    const desiredLeft = (targetLeftInCanvas + (targetWidth / 2)) - (containerWidth / 2);
+
+                    scrollContainer.scrollTo({
+                        left: Math.max(0, desiredLeft),
+                        behavior: 'smooth'
+                    });
+                }
+
+                // Smoothly center the table vertically in browser window
+                setTimeout(() => {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    target.classList.add('locate-bounce');
+                    setTimeout(() => target.classList.remove('locate-bounce'), 1800);
+                }, 100);
             }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             renderGrids();
 
-            // Auto-scroll to customer's table on page load
+            // Auto-pan and center customer's table on page load
             if (myBooking) {
                 setTimeout(() => {
                     locateCustomerSeat();
-                }, 350);
+                }, 400);
             }
         });
     </script>
