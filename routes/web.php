@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CheckInController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,12 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Admin QR Scanner & Check-In Seat Locator
+    Route::get('/scanner', [CheckInController::class, 'index'])->name('scanner.index');
+    Route::get('/check-in', [CheckInController::class, 'index'])->name('checkin.index');
+    Route::post('/api/check-in/lookup', [CheckInController::class, 'lookup'])->name('checkin.lookup');
+    Route::post('/api/check-in/mark', [CheckInController::class, 'markCheckIn'])->name('checkin.mark');
 
     // API Routes for booking management
     Route::get('/api/bookings', [BookingController::class, 'index'])->name('bookings.index');

@@ -351,6 +351,7 @@
         .card-gold::before { background: var(--crimson-gradient); }
         .card-standing::before { background: linear-gradient(135deg, #9d4edd, #2ec4b6); }
         .card-temporary::before { background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%); }
+        .card-checkin::before { background: linear-gradient(135deg, #39ff14 0%, #10b981 50%, #00f2fe 100%); }
 
         .metric-header {
             display: flex;
@@ -375,6 +376,7 @@
         .card-gold .metric-suit-icon { color: var(--ruby-red); text-shadow: 0 0 10px var(--ruby-glow); }
         .card-standing .metric-suit-icon { color: var(--royal-purple); text-shadow: 0 0 10px var(--purple-glow); }
         .card-temporary .metric-suit-icon { color: #f59e0b; text-shadow: 0 0 10px rgba(245, 158, 11, 0.5); }
+        .card-checkin .metric-suit-icon { color: var(--neon-green); text-shadow: 0 0 12px rgba(57, 255, 20, 0.5); }
 
         .metric-value {
             font-family: 'Cinzel', serif;
@@ -409,6 +411,7 @@
         .card-total .progress-bar { background: linear-gradient(135deg, #00f2fe, #2ec4b6); box-shadow: 0 0 10px rgba(0, 242, 254, 0.4); }
         .card-platinum .progress-bar { background: var(--gold-gradient); box-shadow: 0 0 10px var(--gold-glow); }
         .card-gold .progress-bar { background: var(--crimson-gradient); box-shadow: 0 0 10px var(--ruby-glow); }
+        .card-checkin .progress-bar { background: linear-gradient(135deg, #39ff14, #10b981); box-shadow: 0 0 10px rgba(57, 255, 20, 0.45); }
 
         /* Arena Card Container */
         .arena-card {
@@ -613,6 +616,39 @@
             background: rgba(245, 158, 11, 0.4);
             box-shadow: 0 0 16px rgba(245, 158, 11, 0.6);
             transform: scale(1.08);
+        }
+
+        .seat-circle.checked-in {
+            border: 2px solid var(--neon-green);
+            background: rgba(16, 185, 129, 0.32);
+            color: #ffffff;
+            box-shadow: 0 0 14px rgba(57, 255, 20, 0.55);
+            font-size: 0.72rem;
+            line-height: 1.05;
+            flex-direction: column;
+        }
+        .seat-circle.checked-in:hover {
+            background: rgba(16, 185, 129, 0.5);
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.85);
+            transform: scale(1.08);
+        }
+
+        .table-btn.has-checked-in {
+            box-shadow: inset 0 0 0 1px rgba(57, 255, 20, 0.65), 0 0 8px rgba(57, 255, 20, 0.3);
+        }
+
+        .badge-status-checkin {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+            border: 1px solid rgba(57, 255, 20, 0.5);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
         }
 
         .temporary-allocation-banner {
@@ -1459,6 +1495,9 @@
         </div>
 
         <div class="header-actions">
+            <a href="{{ route('scanner.index') }}" class="btn-primary" style="width: auto; margin: 0; padding: 8px 16px; font-size: 0.82rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #39ff14 0%, #10b981 100%); color: #07050d; font-weight: 800; box-shadow: 0 0 18px rgba(57, 255, 20, 0.4); border-radius: 20px;">
+                📷 QR Check-In Scanner
+            </a>
             <span class="admin-badge">♠ ADMIN CONTROL</span>
             <form action="/logout" method="POST" style="margin: 0;">
                 @csrf
@@ -1484,6 +1523,28 @@
                 </div>
                 <div class="progress-bar-container">
                     <div class="progress-bar" id="stats-total-progress" style="width: {{ $stats['total']['percentage'] }}%"></div>
+                </div>
+            </div>
+
+            <!-- Checked-In & Remaining Check-In Countdown -->
+            <div class="metric-card card-checkin" style="cursor: pointer;" onclick="window.location.href='{{ route('scanner.index') }}'" title="Click to open QR Check-In Scanner">
+                <div class="metric-header">
+                    <div class="metric-title" style="color: var(--neon-green);">CHECKED-IN / COUNTDOWN</div>
+                    <div class="metric-suit-icon">🔒</div>
+                </div>
+                <div class="metric-value" style="color: var(--neon-green);">
+                    <span id="stats-checkin-sold">{{ $stats['checkin']['checked_in'] ?? 0 }}</span>
+                    <span style="font-size: 0.95rem; font-family: 'Outfit', sans-serif; font-weight: 700; color: #00f2fe; margin-left: 4px;">
+                        (<span id="stats-checkin-remaining">{{ $stats['checkin']['remaining'] ?? 0 }}</span> Left)
+                    </span>
+                </div>
+                <div class="metric-sub" id="stats-checkin-sub">
+                    <span style="color: var(--gold-primary);">♠ {{ $stats['checkin']['platinum'] ?? 0 }}</span> &bull; 
+                    <span style="color: #ff758f;">♥ {{ $stats['checkin']['gold'] ?? 0 }}</span> &bull; 
+                    <span style="color: #c77dff;">♣ {{ $stats['checkin']['standing'] ?? 0 }}</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="stats-checkin-progress" style="width: {{ $stats['checkin']['percentage'] ?? 0 }}%"></div>
                 </div>
             </div>
 
@@ -1603,6 +1664,10 @@
                         <span class="legend-dot" style="background: rgba(245, 158, 11, 0.25); border: 1px dashed #f59e0b;"></span>
                         <span style="color: #fbbf24; font-weight: 700;">⏳ Temporary Hold (Name Only - Excluded from Excel)</span>
                     </div>
+                    <div class="arena-legend-item">
+                        <span class="legend-dot" style="background: rgba(16, 185, 129, 0.35); border: 1px solid var(--neon-green);"></span>
+                        <span style="color: var(--neon-green); font-weight: 700;">🔒 Checked-In Seat (Seated Users Only)</span>
+                    </div>
                 </div>
 
                 <div class="arena-layout">
@@ -1707,6 +1772,8 @@
                                 <td>
                                     @if ($booking->is_temporary)
                                         <span class="badge-status-temp" title="Excluded from Excel Sheet">⏳ Temporary</span>
+                                    @elseif ($booking->is_checked_in)
+                                        <span class="badge-status-checkin" title="Checked In">{{ $booking->category !== 'standing' ? '🔒' : '✓' }} Checked In</span>
                                     @else
                                         <span class="badge-status-perm" title="Synced to Excel Sheet">✓ Permanent</span>
                                     @endif
@@ -1790,11 +1857,13 @@
             
             <div class="reservation-detail-pop" id="seat-detail-bubble">
                 <div style="margin-bottom: 4px;"><strong>Status:</strong> <span id="bubble-status"></span></div>
+                <div id="bubble-checkin-row" style="margin-bottom: 4px; display: none;"><strong>Check-In:</strong> <span id="bubble-checkin"></span></div>
                 <strong>Allocated Name:</strong> <span id="bubble-name" style="color: var(--gold-primary); font-weight: 700;"></span><br>
                 <div id="bubble-email-row"><strong>Email:</strong> <span id="bubble-email"></span></div>
                 <div id="bubble-ticket-row"><strong>Ticket No:</strong> <span id="bubble-ticket" style="color: var(--gold-primary);"></span></div>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
                     <button id="btn-make-seat-perm" class="btn-primary" style="display: none; background: var(--gold-gradient); color: #110e1c; font-weight: 800; padding: 8px 12px; font-size: 0.85rem; width: auto;" onclick="openMakePermanentForActiveSeat()">✨ Add Details & Make Permanent</button>
+                    <button id="btn-toggle-seat-checkin" class="btn-primary" style="display: none; background: linear-gradient(135deg, #39ff14, #10b981); color: #07050d; font-weight: 800; padding: 8px 12px; font-size: 0.85rem; width: auto;" onclick="toggleActiveSeatCheckIn()">🔒 Mark as Checked-In</button>
                     <button id="btn-copy-seat-url" class="btn-primary" style="background: var(--gold-gradient); color: #110e1c; font-weight: 800; padding: 8px 12px; font-size: 0.85rem; width: auto;" onclick="copyActiveSeatUrl()">🔗 Copy Customer Link</button>
                     <button id="btn-delete-seat" class="btn-primary" style="background: var(--crimson-gradient); box-shadow: 0 4px 15px var(--ruby-glow); padding: 8px 12px; font-size: 0.85rem; color: #fff; width: auto;" onclick="deleteActiveSeatBooking()">Delete Ticket</button>
                 </div>
@@ -2087,6 +2156,32 @@
                 elTempSub.innerHTML = `<span style="color: var(--gold-primary);">♠ ${platTemp}</span> &bull; <span style="color: #ff758f;">♥ ${goldTemp}</span> &bull; <span style="color: #c77dff;">♣ ${standingTemp}</span>`;
             }
 
+            // Checked-In & Remaining Check-In Countdown Stats
+            const isCheckedIn = r => Boolean(r.is_checked_in) && isPerm(r);
+            const platCheckedInFull = reservationsList.filter(r => r.category === 'platinum' && r.is_full_table && isCheckedIn(r)).length;
+            const platCheckedInInd = reservationsList.filter(r => r.category === 'platinum' && !r.is_full_table && isCheckedIn(r)).length;
+            const platCheckedIn = (platCheckedInFull * 8) + platCheckedInInd;
+
+            const goldCheckedInFull = reservationsList.filter(r => r.category === 'gold' && r.is_full_table && isCheckedIn(r)).length;
+            const goldCheckedInInd = reservationsList.filter(r => r.category === 'gold' && !r.is_full_table && isCheckedIn(r)).length;
+            const goldCheckedIn = (goldCheckedInFull * 8) + goldCheckedInInd;
+
+            const standingCheckedIn = reservationsList.filter(r => r.category === 'standing' && isCheckedIn(r)).length;
+            const totalCheckedIn = platCheckedIn + goldCheckedIn + standingCheckedIn;
+            const remainingCheckIn = Math.max(0, totalSold - totalCheckedIn);
+            const checkInPct = totalSold > 0 ? ((totalCheckedIn / totalSold) * 100).toFixed(1) : 0;
+
+            const elCheckInSold = document.getElementById('stats-checkin-sold');
+            if (elCheckInSold) elCheckInSold.innerText = totalCheckedIn;
+            const elCheckInRem = document.getElementById('stats-checkin-remaining');
+            if (elCheckInRem) elCheckInRem.innerText = remainingCheckIn;
+            const elCheckInSub = document.getElementById('stats-checkin-sub');
+            if (elCheckInSub) {
+                elCheckInSub.innerHTML = `<span style="color: var(--gold-primary);">♠ ${platCheckedIn}</span> &bull; <span style="color: #ff758f;">♥ ${goldCheckedIn}</span> &bull; <span style="color: #c77dff;">♣ ${standingCheckedIn}</span>`;
+            }
+            const elCheckInProg = document.getElementById('stats-checkin-progress');
+            if (elCheckInProg) elCheckInProg.style.width = `${checkInPct}%`;
+
             const elHeaderTotal = document.getElementById('header-total-sold');
             if (elHeaderTotal) elHeaderTotal.innerText = totalSold;
         }
@@ -2129,6 +2224,7 @@
                 const bookedSeatsCount = bookingsForTable.length;
                 const hasTemp = bookingsForTable.some(r => Boolean(r.is_temporary));
                 const allTemp = bookingsForTable.length > 0 && bookingsForTable.every(r => Boolean(r.is_temporary));
+                const hasCheckedInSeated = category !== 'standing' && bookingsForTable.some(r => Boolean(r.is_checked_in) && !r.is_temporary);
 
                 if (allTemp) {
                     btn.classList.add('temporary-reserved');
@@ -2141,6 +2237,12 @@
                     if (hasTemp) btn.classList.add('has-temporary');
                 } else {
                     btn.classList.add('available');
+                }
+
+                // Lock icon only for checked-in seated users (Platinum & Gold)
+                if (hasCheckedInSeated) {
+                    btn.classList.add('has-checked-in');
+                    btn.innerText = `🔒${label}`;
                 }
 
                 btn.onclick = () => openSeatingModal(category, side, i);
@@ -2250,7 +2352,11 @@
 
                 for (let s = 1; s <= 8; s++) {
                     const seatEl = document.getElementById(`seat-${s}`);
-                    seatEl.className = isFullTemp ? 'seat-circle temporary' : 'seat-circle reserved';
+                    const isFullCheckedIn = Boolean(fullBooking.is_checked_in) && !isFullTemp && category !== 'standing';
+                    seatEl.className = isFullTemp
+                        ? 'seat-circle temporary'
+                        : (isFullCheckedIn ? 'seat-circle reserved checked-in' : 'seat-circle reserved');
+                    seatEl.innerHTML = isFullCheckedIn ? `<span style="font-size:0.7rem;">🔒</span><span>${s}</span>` : `${s}`;
                     if (tableMatches.length > 0) {
                         seatEl.classList.add('search-matched-seat');
                     }
@@ -2271,7 +2377,12 @@
                     const seatBooking = bookings.find(r => parseInt(r.seat_number, 10) === s);
 
                     if (seatBooking) {
-                        seatEl.className = Boolean(seatBooking.is_temporary) ? 'seat-circle temporary' : 'seat-circle reserved';
+                        const isSeatTemp = Boolean(seatBooking.is_temporary);
+                        const isSeatCheckedIn = Boolean(seatBooking.is_checked_in) && !isSeatTemp && category !== 'standing';
+                        seatEl.className = isSeatTemp
+                            ? 'seat-circle temporary'
+                            : (isSeatCheckedIn ? 'seat-circle reserved checked-in' : 'seat-circle reserved');
+                        seatEl.innerHTML = isSeatCheckedIn ? `<span style="font-size:0.7rem;">🔒</span><span>${s}</span>` : `${s}`;
                         const isMatchedSeat = tableMatches.some(m => m.seatNumber === s || (m.reservation && parseInt(m.reservation.seat_number, 10) === s));
                         if (isMatchedSeat) {
                             seatEl.classList.add('search-matched-seat');
@@ -2279,6 +2390,7 @@
                         seatEl.onclick = () => showBubble(seatBooking);
                     } else {
                         seatEl.className = 'seat-circle available';
+                        seatEl.innerHTML = `${s}`;
                         seatEl.onclick = () => toggleSeatSelection(s);
                     }
                 }
@@ -2336,11 +2448,16 @@
         function showBubble(booking) {
             activeBooking = booking;
             const isTemp = Boolean(booking.is_temporary);
+            const isCheckedIn = Boolean(booking.is_checked_in) && !isTemp;
+            const isSeated = booking.category !== 'standing';
             const bubble = document.getElementById('seat-detail-bubble');
             const statusEl = document.getElementById('bubble-status');
+            const checkinRow = document.getElementById('bubble-checkin-row');
+            const checkinEl = document.getElementById('bubble-checkin');
             const emailRow = document.getElementById('bubble-email-row');
             const ticketRow = document.getElementById('bubble-ticket-row');
             const btnMakePerm = document.getElementById('btn-make-seat-perm');
+            const btnToggleCheckin = document.getElementById('btn-toggle-seat-checkin');
             const btnCopyUrl = document.getElementById('btn-copy-seat-url');
             const btnDelete = document.getElementById('btn-delete-seat');
 
@@ -2348,6 +2465,35 @@
                 statusEl.innerHTML = isTemp
                     ? `<span class="badge-status-temp">⏳ Temporary Hold (Not in Excel)</span>`
                     : `<span class="badge-status-perm">✓ Permanent (Synced to Excel)</span>`;
+            }
+
+            if (checkinRow && checkinEl) {
+                if (isTemp) {
+                    checkinRow.style.display = 'none';
+                } else {
+                    checkinRow.style.display = 'block';
+                    const lockIcon = isSeated ? '🔒 ' : '✓ ';
+                    checkinEl.innerHTML = isCheckedIn
+                        ? `<span class="badge-status-checkin">${lockIcon}Checked In</span>`
+                        : `<span style="color: var(--text-muted); font-size: 0.8rem;">⏳ Pending Check-In</span>`;
+                }
+            }
+
+            if (btnToggleCheckin) {
+                if (isTemp) {
+                    btnToggleCheckin.style.display = 'none';
+                } else {
+                    btnToggleCheckin.style.display = 'inline-block';
+                    if (isCheckedIn) {
+                        btnToggleCheckin.innerText = '↩️ Undo Check-In';
+                        btnToggleCheckin.style.background = 'rgba(255, 255, 255, 0.1)';
+                        btnToggleCheckin.style.color = '#e2e8f0';
+                    } else {
+                        btnToggleCheckin.innerText = isSeated ? '🔒 Mark as Checked-In' : '✓ Mark as Checked-In';
+                        btnToggleCheckin.style.background = 'linear-gradient(135deg, #39ff14, #10b981)';
+                        btnToggleCheckin.style.color = '#07050d';
+                    }
+                }
             }
 
             document.getElementById('bubble-name').innerText = booking.name;
@@ -2360,6 +2506,45 @@
             if (btnDelete) btnDelete.innerText = isTemp ? '🗑️ Release Hold' : 'Delete Ticket';
 
             bubble.style.display = 'block';
+        }
+
+        async function toggleActiveSeatCheckIn() {
+            if (!activeBooking || !activeBooking.id) return;
+            const newStatus = !Boolean(activeBooking.is_checked_in);
+            showLoader(newStatus ? 'Marking seat as checked in...' : 'Reverting check-in status...');
+
+            try {
+                const response = await fetch('/api/check-in/mark', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        reservation_id: activeBooking.id,
+                        status: newStatus
+                    })
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showToast(data.message || 'Check-in status updated!', 'success');
+                    await fetchBookingsAndRender();
+                    reloadRecentBookingsTable();
+                    if (activeCategory && activeSide && activeTable) {
+                        openSeatingModal(activeCategory, activeSide, activeTable);
+                        const updated = reservationsList.find(r => r.id == activeBooking.id);
+                        if (updated) showBubble(updated);
+                    }
+                } else {
+                    showToast(data.message || 'Failed to update check-in status.', 'error');
+                }
+            } catch (err) {
+                console.error('Check-in toggle error:', err);
+                showToast('Error updating check-in status.', 'error');
+            } finally {
+                hideLoader();
+            }
         }
 
         // Open Temporary Hold Modal (Name Only)
@@ -2759,7 +2944,9 @@
 
                     const statusBadge = isTemp
                         ? `<span class="badge-status-temp" title="Excluded from Excel Sheet">⏳ Temporary</span>`
-                        : `<span class="badge-status-perm" title="Synced to Excel Sheet">✓ Permanent</span>`;
+                        : (Boolean(b.is_checked_in)
+                            ? `<span class="badge-status-checkin" title="Checked In">${b.category !== 'standing' ? '🔒' : '✓'} Checked In</span>`
+                            : `<span class="badge-status-perm" title="Synced to Excel Sheet">✓ Permanent</span>`);
 
                     const actionsHtml = isTemp
                         ? `<button onclick="openMakePermanentModal('${b.id}')" class="btn-primary" style="padding: 4px 10px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 800; margin-right: 6px; width: auto;" title="Edit Details & Make Permanent">✨ Make Permanent</button>

@@ -16,6 +16,8 @@ class Reservation extends Model
         'seat_number',
         'is_full_table',
         'is_temporary',
+        'is_checked_in',
+        'checked_in_at',
         'name',
         'email',
         'ticket_number',
@@ -24,6 +26,8 @@ class Reservation extends Model
     protected $casts = [
         'is_full_table' => 'boolean',
         'is_temporary' => 'boolean',
+        'is_checked_in' => 'boolean',
+        'checked_in_at' => 'datetime',
         'table_number' => 'integer',
         'seat_number' => 'integer',
     ];
@@ -36,5 +40,10 @@ class Reservation extends Model
     public function scopeTemporary($query)
     {
         return $query->where('is_temporary', true);
+    }
+
+    public function scopeCheckedIn($query)
+    {
+        return $query->where('is_checked_in', true);
     }
 }
