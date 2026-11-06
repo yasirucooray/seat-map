@@ -24,13 +24,23 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $is_temporary = filter_var($request->input('is_temporary', false), FILTER_VALIDATE_BOOLEAN);
+
+        $rules = [
             'category' => 'required|in:platinum,gold,standing',
-            'name' => 'required|string',
-            'email' => 'required|email',
-            'ticket_number' => 'required|string',
+            'name' => 'required|string|max:255',
             'ticket_count' => 'nullable|integer|min:1',
-        ]);
+        ];
+
+        if (!$is_temporary) {
+            $rules['email'] = 'required|email|max:255';
+            $rules['ticket_number'] = 'required|string|max:255';
+        } else {
+            $rules['email'] = 'nullable|email|max:255';
+            $rules['ticket_number'] = 'nullable|string|max:255';
+        }
+
+        $request->validate($rules);
 
         $category = $request->category;
 
@@ -38,39 +48,44 @@ class BookingController extends Controller
         if ($category === 'standing') {
             $ticket_count = (int)$request->input('ticket_count', 1);
 
+            $baseTicket = $request->ticket_number;
+            if (empty($baseTicket)) {
+                $baseTicket = 'TEMP-STD-' . strtoupper(substr($request->side ?? 'center', 0, 1)) . '-' . time();
+            }
+
             $reservations = [];
             for ($i = 1; $i <= $ticket_count; $i++) {
-                $tkt = $request->ticket_number;
-                if ($ticket_count > 1) {
-                    $tkt = $tkt . '-' . $i;
-                }
-
                 $reservations[] = Reservation::create([
                     'category' => 'standing',
                     'side' => $request->side ?? 'center',
                     'name' => $request->name,
                     'email' => $request->email,
-                    'ticket_number' => $tkt,
+                    'ticket_number' => $baseTicket,
                     'is_full_table' => false,
+                    'is_temporary' => $is_temporary,
                 ]);
             }
 
-            // Sync to Google Sheet in background batch
-            if (function_exists('Illuminate\Support\defer')) {
-                \Illuminate\Support\defer(function () use ($reservations) {
+            // Sync to Google Sheet ONLY for permanent bookings
+            if (!$is_temporary) {
+                if (function_exists('Illuminate\Support\defer')) {
+                    \Illuminate\Support\defer(function () use ($reservations) {
+                        $this->googleSheets->appendReservations($reservations);
+                    });
+                } else {
                     $this->googleSheets->appendReservations($reservations);
-                });
-            } else {
-                $this->googleSheets->appendReservations($reservations);
+                }
             }
 
+            $typeLabel = $is_temporary ? 'Temporary standing reservation' : 'Standing booking';
             return response()->json([
                 'success' => true,
                 'message' => $ticket_count === 1 
-                    ? 'Standing booking created successfully.' 
-                    : "{$ticket_count} standing bookings created successfully.",
+                    ? "{$typeLabel} created successfully." 
+                    : "{$ticket_count} {$typeLabel}s created successfully.",
                 'reservation' => $reservations[0],
-                'reservations' => $reservations
+                'reservations' => $reservations,
+                'is_temporary' => $is_temporary,
             ]);
         }
 
@@ -93,8 +108,8 @@ class BookingController extends Controller
         }
 
         try {
-            $result = DB::transaction(function () use ($request, $category, $side, $table_number, $is_full_table) {
-                // Check if table is already fully reserved
+            $result = DB::transaction(function () use ($request, $category, $side, $table_number, $is_full_table, $is_temporary) {
+                // Check if table is already fully reserved or held
                 $isTableFullyReserved = Reservation::where('category', $category)
                     ->where('side', $side)
                     ->where('table_number', $table_number)
@@ -103,7 +118,8 @@ class BookingController extends Controller
                     ->first();
 
                 if ($isTableFullyReserved) {
-                    throw new \Exception('This table is already fully reserved.');
+                    $statusDesc = $isTableFullyReserved->is_temporary ? 'temporarily held by ' . $isTableFullyReserved->name : 'already fully reserved';
+                    throw new \Exception("This table is {$statusDesc}.");
                 }
 
                 if ($is_full_table) {
@@ -118,14 +134,20 @@ class BookingController extends Controller
                         throw new \Exception('Table has active individual seat bookings. Cannot reserve full table.');
                     }
 
+                    $ticketNumber = $request->ticket_number;
+                    if (empty($ticketNumber)) {
+                        $ticketNumber = 'TEMP-' . strtoupper(substr($side, 0, 1)) . $table_number . '-' . strtoupper(substr(uniqid(), -4));
+                    }
+
                     $reservation = Reservation::create([
                         'category' => $category,
                         'side' => $side,
                         'table_number' => $table_number,
                         'is_full_table' => true,
+                        'is_temporary' => $is_temporary,
                         'name' => $request->name,
                         'email' => $request->email,
-                        'ticket_number' => $request->ticket_number,
+                        'ticket_number' => $ticketNumber,
                     ]);
 
                     return [$reservation];
@@ -150,15 +172,21 @@ class BookingController extends Controller
 
                     $reservations = [];
                     foreach ($seat_numbers as $seat_number) {
+                        $ticketNumber = $request->ticket_number;
+                        if (empty($ticketNumber)) {
+                            $ticketNumber = 'TEMP-' . strtoupper(substr($side, 0, 1)) . $table_number . '-S' . $seat_number . '-' . strtoupper(substr(uniqid(), -4));
+                        }
+
                         $reservations[] = Reservation::create([
                             'category' => $category,
                             'side' => $side,
                             'table_number' => $table_number,
                             'seat_number' => $seat_number,
                             'is_full_table' => false,
+                            'is_temporary' => $is_temporary,
                             'name' => $request->name,
                             'email' => $request->email,
-                            'ticket_number' => $request->ticket_number,
+                            'ticket_number' => $ticketNumber,
                         ]);
                     }
 
@@ -166,22 +194,34 @@ class BookingController extends Controller
                 }
             });
 
-            // Sync created reservations to Google Sheet in background batch
-            if (function_exists('Illuminate\Support\defer')) {
-                \Illuminate\Support\defer(function () use ($result) {
+            // Sync created reservations to Google Sheet ONLY for permanent bookings!
+            if (!$is_temporary) {
+                if (function_exists('Illuminate\Support\defer')) {
+                    \Illuminate\Support\defer(function () use ($result) {
+                        $this->googleSheets->appendReservations($result);
+                    });
+                } else {
                     $this->googleSheets->appendReservations($result);
-                });
-            } else {
-                $this->googleSheets->appendReservations($result);
+                }
             }
 
             $seatCount = count($result);
-            if ($is_full_table) {
-                $message = 'Full table reserved successfully.';
+            if ($is_temporary) {
+                if ($is_full_table) {
+                    $message = "Full table temporarily reserved for {$request->name} (Not synced to Excel).";
+                } else {
+                    $message = $seatCount === 1
+                        ? "Seat temporarily reserved for {$request->name} (Not synced to Excel)."
+                        : "{$seatCount} seats temporarily reserved for {$request->name} (Not synced to Excel).";
+                }
             } else {
-                $message = $seatCount === 1
-                    ? 'Seat reserved successfully.'
-                    : "{$seatCount} seats reserved successfully.";
+                if ($is_full_table) {
+                    $message = 'Full table reserved successfully and synced to Excel.';
+                } else {
+                    $message = $seatCount === 1
+                        ? 'Seat reserved successfully and synced to Excel.'
+                        : "{$seatCount} seats reserved successfully and synced to Excel.";
+                }
             }
 
             return response()->json([
@@ -189,6 +229,7 @@ class BookingController extends Controller
                 'message' => $message,
                 'reservation' => $result[0],
                 'reservations' => $result,
+                'is_temporary' => $is_temporary,
             ]);
 
         } catch (\Exception $e) {
@@ -201,7 +242,6 @@ class BookingController extends Controller
 
     /**
      * Resolve and validate the requested seat numbers for an individual booking.
-     * Accepts either `seat_numbers` (array) or the legacy single `seat_number`.
      *
      * @return int[] Unique, validated seat numbers (1-8).
      */
@@ -238,13 +278,17 @@ class BookingController extends Controller
                 return response()->json(['success' => false, 'message' => 'Reservation not found.'], 404);
             }
 
-            // Sync deletion to Google Sheet in background
-            if (function_exists('Illuminate\Support\defer')) {
-                \Illuminate\Support\defer(function () use ($reservation) {
+            $wasTemporary = (bool)$reservation->is_temporary;
+
+            // Sync deletion to Google Sheet ONLY if it was a permanent booking
+            if (!$wasTemporary) {
+                if (function_exists('Illuminate\Support\defer')) {
+                    \Illuminate\Support\defer(function () use ($reservation) {
+                        $this->googleSheets->deleteReservation($reservation);
+                    });
+                } else {
                     $this->googleSheets->deleteReservation($reservation);
-                });
-            } else {
-                $this->googleSheets->deleteReservation($reservation);
+                }
             }
 
             // Delete from Database
@@ -252,7 +296,9 @@ class BookingController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Reservation cancelled/deleted successfully.'
+                'message' => $wasTemporary 
+                    ? 'Temporary reservation released successfully.' 
+                    : 'Reservation cancelled/deleted successfully from database and Excel.'
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -270,10 +316,45 @@ class BookingController extends Controller
                 return response()->json(['success' => false, 'message' => 'Reservation not found.'], 404);
             }
 
+            $wasTemporary = (bool)$reservation->is_temporary;
+            $makePermanent = filter_var($request->input('make_permanent', false), FILTER_VALIDATE_BOOLEAN)
+                || ($request->has('is_temporary') && !filter_var($request->input('is_temporary'), FILTER_VALIDATE_BOOLEAN));
+
+            if ($wasTemporary && $makePermanent) {
+                // Converting temporary reservation to permanent
+                $request->validate([
+                    'name' => 'required|string|max:255',
+                    'email' => 'required|email|max:255',
+                    'ticket_number' => 'required|string|max:255',
+                ]);
+
+                $reservation->name = $request->input('name');
+                $reservation->email = $request->input('email');
+                $reservation->ticket_number = $request->input('ticket_number');
+                $reservation->is_temporary = false;
+                $reservation->save();
+
+                // Now that it's permanent, sync to Google Sheet!
+                if (function_exists('Illuminate\Support\defer')) {
+                    \Illuminate\Support\defer(function () use ($reservation) {
+                        $this->googleSheets->appendReservations([$reservation]);
+                    });
+                } else {
+                    $this->googleSheets->appendReservations([$reservation]);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "Reservation for {$reservation->name} is now PERMANENT and synced to Excel sheet!",
+                    'reservation' => $reservation
+                ]);
+            }
+
+            // Normal update (or editing details of temporary hold)
             $request->validate([
-                'name' => 'sometimes|required|string',
-                'email' => 'sometimes|required|email',
-                'ticket_number' => 'sometimes|required|string',
+                'name' => 'sometimes|required|string|max:255',
+                'email' => $wasTemporary ? 'nullable|email|max:255' : 'sometimes|required|email|max:255',
+                'ticket_number' => $wasTemporary ? 'nullable|string|max:255' : 'sometimes|required|string|max:255',
             ]);
 
             $oldTicketNumber = $reservation->ticket_number;
@@ -287,21 +368,28 @@ class BookingController extends Controller
             if ($request->has('ticket_number')) {
                 $reservation->ticket_number = $request->input('ticket_number');
             }
+            if ($request->has('is_temporary')) {
+                $reservation->is_temporary = filter_var($request->input('is_temporary'), FILTER_VALIDATE_BOOLEAN);
+            }
 
             $reservation->save();
 
-            // Sync update to Google Sheet in background
-            if (function_exists('Illuminate\Support\defer')) {
-                \Illuminate\Support\defer(function () use ($reservation, $oldTicketNumber) {
+            // Only sync update to Google Sheet if reservation is permanent!
+            if (!$reservation->is_temporary) {
+                if (function_exists('Illuminate\Support\defer')) {
+                    \Illuminate\Support\defer(function () use ($reservation, $oldTicketNumber) {
+                        $this->googleSheets->updateReservation($reservation, $oldTicketNumber);
+                    });
+                } else {
                     $this->googleSheets->updateReservation($reservation, $oldTicketNumber);
-                });
-            } else {
-                $this->googleSheets->updateReservation($reservation, $oldTicketNumber);
+                }
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Reservation updated successfully.',
+                'message' => $reservation->is_temporary 
+                    ? 'Temporary reservation updated successfully.' 
+                    : 'Reservation updated successfully and synced to Excel.',
                 'reservation' => $reservation
             ]);
         } catch (\Exception $e) {

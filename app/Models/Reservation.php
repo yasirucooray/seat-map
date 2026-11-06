@@ -15,6 +15,7 @@ class Reservation extends Model
         'table_number',
         'seat_number',
         'is_full_table',
+        'is_temporary',
         'name',
         'email',
         'ticket_number',
@@ -22,7 +23,18 @@ class Reservation extends Model
 
     protected $casts = [
         'is_full_table' => 'boolean',
+        'is_temporary' => 'boolean',
         'table_number' => 'integer',
         'seat_number' => 'integer',
     ];
+
+    public function scopePermanent($query)
+    {
+        return $query->where('is_temporary', false);
+    }
+
+    public function scopeTemporary($query)
+    {
+        return $query->where('is_temporary', true);
+    }
 }

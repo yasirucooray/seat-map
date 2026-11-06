@@ -315,7 +315,7 @@
         /* Metrics Row */
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
             gap: 20px;
             margin-bottom: 35px;
         }
@@ -350,6 +350,7 @@
         .card-platinum::before { background: var(--gold-gradient); }
         .card-gold::before { background: var(--crimson-gradient); }
         .card-standing::before { background: linear-gradient(135deg, #9d4edd, #2ec4b6); }
+        .card-temporary::before { background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%); }
 
         .metric-header {
             display: flex;
@@ -373,6 +374,7 @@
         .card-platinum .metric-suit-icon { color: var(--gold-primary); text-shadow: 0 0 10px var(--gold-glow); }
         .card-gold .metric-suit-icon { color: var(--ruby-red); text-shadow: 0 0 10px var(--ruby-glow); }
         .card-standing .metric-suit-icon { color: var(--royal-purple); text-shadow: 0 0 10px var(--purple-glow); }
+        .card-temporary .metric-suit-icon { color: #f59e0b; text-shadow: 0 0 10px rgba(245, 158, 11, 0.5); }
 
         .metric-value {
             font-family: 'Cinzel', serif;
@@ -577,6 +579,117 @@
             background: rgba(230, 57, 70, 0.25);
             box-shadow: 0 0 12px var(--ruby-glow);
             transform: scale(1.05);
+        }
+
+        .table-btn.temporary-reserved {
+            border-color: rgba(245, 158, 11, 0.75);
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border-style: dashed;
+            box-shadow: inset 0 0 8px rgba(245, 158, 11, 0.25);
+        }
+        .table-btn.temporary-reserved:hover {
+            background: rgba(245, 158, 11, 0.3);
+            border-color: #f59e0b;
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.55);
+            transform: scale(1.05);
+        }
+
+        .table-btn.has-temporary::after {
+            content: '⏳';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            font-size: 0.65rem;
+        }
+
+        .seat-circle.temporary {
+            border: 2px dashed #f59e0b;
+            background: rgba(245, 158, 11, 0.22);
+            color: #fbbf24;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+        }
+        .seat-circle.temporary:hover {
+            background: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.6);
+            transform: scale(1.08);
+        }
+
+        .temporary-allocation-banner {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.45);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            text-align: left;
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+
+        .badge-status-temp {
+            background: rgba(245, 158, 11, 0.16);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .badge-status-perm {
+            background: rgba(57, 255, 20, 0.12);
+            color: #8ade80;
+            border: 1px solid rgba(57, 255, 20, 0.35);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .btn-temp-action {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35) !important;
+            font-weight: 700 !important;
+            border: none !important;
+            margin-bottom: 12px;
+        }
+        .btn-temp-action:hover {
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.55) !important;
+        }
+
+        .arena-legend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin: 0 auto 24px;
+            padding: 12px 20px;
+            background: rgba(14, 11, 23, 0.65);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 14px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .arena-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            display: inline-block;
         }
 
         /* Standing Areas */
@@ -1357,10 +1470,10 @@
     <div class="dashboard-container">
         <!-- Metrics Row -->
         <div class="metrics-grid">
-            <!-- Total Tickets Sold -->
+            <!-- Total Tickets Sold (Permanent) -->
             <div class="metric-card card-total">
                 <div class="metric-header">
-                    <div class="metric-title">TOTAL TICKETS SOLD</div>
+                    <div class="metric-title">PERMANENT TICKETS SOLD</div>
                     <div class="metric-suit-icon">♦</div>
                 </div>
                 <div class="metric-value" id="stats-total-sold">{{ $stats['total']['sold'] }}</div>
@@ -1374,6 +1487,23 @@
                 </div>
             </div>
 
+            <!-- Temporary Hold Tickets (Separate Count) -->
+            <div class="metric-card card-temporary">
+                <div class="metric-header">
+                    <div class="metric-title" style="color: #fbbf24;">TEMPORARY HOLD</div>
+                    <div class="metric-suit-icon">⏳</div>
+                </div>
+                <div class="metric-value" id="stats-temporary-sold" style="color: #fbbf24;">{{ $stats['total']['temporary'] ?? 0 }}</div>
+                <div class="metric-sub" id="stats-temporary-sub">
+                    <span style="color: var(--gold-primary);">♠ {{ $stats['platinum']['temporary'] ?? 0 }}</span> &bull; 
+                    <span style="color: #ff758f;">♥ {{ $stats['gold']['temporary'] ?? 0 }}</span> &bull; 
+                    <span style="color: #c77dff;">♣ {{ $stats['standing']['temporary'] ?? 0 }}</span>
+                </div>
+                <div style="margin-top: 14px; font-size: 0.75rem; color: #fbbf24; font-weight: 600;">
+                    ⚠️ Not Added to Excel Sheet
+                </div>
+            </div>
+
             <!-- Platinum -->
             <div class="metric-card card-platinum">
                 <div class="metric-header">
@@ -1381,7 +1511,7 @@
                     <div class="metric-suit-icon">♠</div>
                 </div>
                 <div class="metric-value" id="stats-platinum-sold">{{ $stats['platinum']['sold'] }} <span style="font-size: 1.1rem; font-weight: 500; color: var(--text-muted);">/ {{ $stats['platinum']['capacity'] }}</span></div>
-                <div class="metric-sub"><span id="stats-platinum-pct">{{ $stats['platinum']['percentage'] }}</span>% Reserved</div>
+                <div class="metric-sub"><span id="stats-platinum-pct">{{ $stats['platinum']['percentage'] }}</span>% Sold &bull; <span style="color: #fbbf24;"><span id="stats-platinum-temp">{{ $stats['platinum']['temporary'] ?? 0 }}</span> Temp</span></div>
                 <div class="progress-bar-container">
                     <div class="progress-bar" id="stats-platinum-progress" style="width: {{ $stats['platinum']['percentage'] }}%"></div>
                 </div>
@@ -1394,7 +1524,7 @@
                     <div class="metric-suit-icon">♥</div>
                 </div>
                 <div class="metric-value" id="stats-gold-sold">{{ $stats['gold']['sold'] }} <span style="font-size: 1.1rem; font-weight: 500; color: var(--text-muted);">/ {{ $stats['gold']['capacity'] }}</span></div>
-                <div class="metric-sub"><span id="stats-gold-pct">{{ $stats['gold']['percentage'] }}</span>% Reserved</div>
+                <div class="metric-sub"><span id="stats-gold-pct">{{ $stats['gold']['percentage'] }}</span>% Sold &bull; <span style="color: #fbbf24;"><span id="stats-gold-temp">{{ $stats['gold']['temporary'] ?? 0 }}</span> Temp</span></div>
                 <div class="progress-bar-container">
                     <div class="progress-bar" id="stats-gold-progress" style="width: {{ $stats['gold']['percentage'] }}%"></div>
                 </div>
@@ -1407,7 +1537,7 @@
                     <div class="metric-suit-icon">♣</div>
                 </div>
                 <div class="metric-value" id="stats-standing-sold">{{ $stats['standing']['sold'] }}</div>
-                <div class="metric-sub">Open Standing Area</div>
+                <div class="metric-sub">Confirmed &bull; <span style="color: #fbbf24;"><span id="stats-standing-temp">{{ $stats['standing']['temporary'] ?? 0 }}</span> Temp</span></div>
             </div>
         </div>
 
@@ -1452,6 +1582,26 @@
                     <div class="stage-banner">
                         <div class="stage-title">♠ STAGE ♠</div>
                         <div class="stage-subtitle">KALABARA LIVE • WATERS EDGE</div>
+                    </div>
+                </div>
+
+                <!-- Color Legend -->
+                <div class="arena-legend">
+                    <div class="arena-legend-item">
+                        <span class="legend-dot" style="background: rgba(57, 255, 20, 0.15); border: 1px solid var(--neon-green);"></span>
+                        <span>Available</span>
+                    </div>
+                    <div class="arena-legend-item">
+                        <span class="legend-dot" style="background: rgba(245, 207, 109, 0.25); border: 1px solid var(--gold-primary);"></span>
+                        <span>Partially Reserved</span>
+                    </div>
+                    <div class="arena-legend-item">
+                        <span class="legend-dot" style="background: rgba(230, 57, 70, 0.3); border: 1px solid var(--ruby-red);"></span>
+                        <span>Fully Reserved (Permanent - Excel Synced)</span>
+                    </div>
+                    <div class="arena-legend-item">
+                        <span class="legend-dot" style="background: rgba(245, 158, 11, 0.25); border: 1px dashed #f59e0b;"></span>
+                        <span style="color: #fbbf24; font-weight: 700;">⏳ Temporary Hold (Name Only - Excluded from Excel)</span>
                     </div>
                 </div>
 
@@ -1538,6 +1688,7 @@
                         <tr>
                             <th>Time</th>
                             <th>Category</th>
+                            <th>Status</th>
                             <th>Side</th>
                             <th>Table</th>
                             <th>Seat / Option</th>
@@ -1553,21 +1704,33 @@
                             <tr>
                                 <td>{{ $booking->created_at->format('Y-m-d H:i') }}</td>
                                 <td><span class="category-badge badge-{{ $booking->category }}">{{ $booking->category }}</span></td>
+                                <td>
+                                    @if ($booking->is_temporary)
+                                        <span class="badge-status-temp" title="Excluded from Excel Sheet">⏳ Temporary</span>
+                                    @else
+                                        <span class="badge-status-perm" title="Synced to Excel Sheet">✓ Permanent</span>
+                                    @endif
+                                </td>
                                 <td>{{ $booking->side ? ucfirst($booking->side) : 'Center' }}</td>
                                 <td>{{ $booking->table_number ? (strtoupper(substr($booking->side, 0, 1)) . $booking->table_number) : 'N/A' }}</td>
                                 <td>{{ $booking->is_full_table ? 'Full Table' : ($booking->seat_number ? 'Seat '.$booking->seat_number : 'N/A') }}</td>
-                                <td>{{ $booking->name }}</td>
-                                <td>{{ $booking->email }}</td>
-                                <td>{{ $booking->ticket_number }}</td>
+                                <td><strong>{{ $booking->name }}</strong></td>
+                                <td>{{ $booking->email ?? '-' }}</td>
+                                <td>{{ $booking->is_temporary ? 'TEMP HOLD' : $booking->ticket_number }}</td>
                                 <td>
-                                    <button onclick="copyCustomerSeatUrl('{{ $booking->ticket_number }}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 700; margin-right: 6px;" title="Copy Customer Anonymous Seat Locator Link">🔗 Copy Link</button>
-                                    <button onclick="confirmDeleteBooking('{{ $booking->id }}')" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem;">Delete</button>
+                                    @if ($booking->is_temporary)
+                                        <button onclick="openMakePermanentModal('{{ $booking->id }}')" class="btn-primary" style="padding: 4px 10px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 800; margin-right: 6px; width: auto;" title="Edit Details & Make Permanent">✨ Make Permanent</button>
+                                        <button onclick="confirmDeleteBooking('{{ $booking->id }}')" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">Release</button>
+                                    @else
+                                        <button onclick="copyCustomerSeatUrl('{{ $booking->ticket_number }}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 700; margin-right: 6px; width: auto;" title="Copy Customer Anonymous Seat Locator Link">🔗 Copy Link</button>
+                                        <button onclick="confirmDeleteBooking('{{ $booking->id }}')" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem;">Delete</button>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach
                     @else
                         <tr>
-                            <td colspan="9" style="text-align: center; color: var(--text-muted);">No reservations found.</td>
+                            <td colspan="10" style="text-align: center; color: var(--text-muted);">No reservations found.</td>
                         </tr>
                     @endif
                 </tbody>
@@ -1578,13 +1741,23 @@
 
     <!-- Seating Details Ring Modal -->
     <div class="modal-overlay" id="seating-modal">
-        <div class="modal-content" style="max-width: 420px;">
+        <div class="modal-content" style="max-width: 440px;">
             <div class="modal-header">
                 <h3 class="modal-title" id="modal-table-title">Table Detail</h3>
                 <button class="close-modal" onclick="closeModal('seating-modal')">&times;</button>
             </div>
             
             <div class="modal-search-match-banner" id="modal-search-match-banner" style="display: none;"></div>
+
+            <!-- Temporary Allocation Banner (Shows who is temporarily allocated) -->
+            <div class="temporary-allocation-banner" id="modal-temporary-banner" style="display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <span style="font-weight: 800; color: #fbbf24; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.05em;">⏳ Temporary Table Allocation</span>
+                    <span style="font-size: 0.7rem; background: rgba(245, 158, 11, 0.25); color: #fef3c7; border: 1px solid rgba(245, 158, 11, 0.5); padding: 2px 6px; border-radius: 4px;">Not in Excel</span>
+                </div>
+                <div id="modal-temporary-names" style="margin-top: 8px; color: #f8fafc; font-size: 0.92rem; line-height: 1.5;"></div>
+                <div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 6px;">Click a seat or use the edit option below to add all booking details and make this permanent.</div>
+            </div>
             
             <div class="seats-container">
                 <div class="modal-table-center" id="modal-table-center-id">L1</div>
@@ -1599,21 +1772,105 @@
                 <div class="seat-circle" id="seat-8" data-seat="8">8</div>
             </div>
 
-            <p id="seat-select-hint" style="text-align: center; font-size: 0.82rem; color: var(--text-muted); margin: 0 0 16px 0;">Select available seats to book together.</p>
+            <p id="seat-select-hint" style="text-align: center; font-size: 0.82rem; color: var(--text-muted); margin: 0 0 16px 0;">Select available seats to book or temporarily hold.</p>
 
+            <!-- Selected Seats Booking Buttons -->
             <button class="btn-primary btn-book-selected" id="btn-book-selected" onclick="openMultiSeatBooking()">Book Selected Seats (0)</button>
+            <button class="btn-primary btn-temp-action" id="btn-temp-hold-selected" style="display: none;" onclick="openTemporaryHoldModal('seats')">⏳ Temporary Hold Selected Seats (0)</button>
 
-            <button class="btn-primary btn-full-table" id="btn-reserve-full" onclick="initiateFullTableBooking()">Reserve Full Table</button>
+            <!-- Full Table Booking Buttons -->
+            <button class="btn-primary btn-full-table" id="btn-reserve-full" onclick="initiateFullTableBooking()">Reserve Full Table (Permanent)</button>
+            <button class="btn-primary btn-temp-action" id="btn-temp-hold-full" onclick="openTemporaryHoldModal('full')">⏳ Temporary Reserve Full Table (Name Only)</button>
+
+            <!-- Full Table Temporary Actions (When full table is temporarily held) -->
+            <div id="full-table-temp-actions" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 12px;">
+                <button class="btn-primary" id="btn-make-table-perm" style="background: var(--gold-gradient); color: #07060c; font-weight: 800;">✨ Edit & Make Full Table Permanent</button>
+                <button class="btn-primary" id="btn-release-table-temp" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-weight: 700; box-shadow: none;">🗑️ Release Temporary Table Hold</button>
+            </div>
             
             <div class="reservation-detail-pop" id="seat-detail-bubble">
-                <strong>Reserved by:</strong> <span id="bubble-name" style="color: var(--gold-primary);"></span><br>
-                <strong>Email:</strong> <span id="bubble-email"></span><br>
-                <strong>Ticket No:</strong> <span id="bubble-ticket" style="color: var(--gold-primary);"></span><br><br>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button id="btn-copy-seat-url" class="btn-primary" style="background: var(--gold-gradient); color: #110e1c; font-weight: 800; padding: 8px 12px; font-size: 0.85rem;" onclick="copyActiveSeatUrl()">🔗 Copy Customer Link</button>
-                    <button id="btn-delete-seat" class="btn-primary" style="background: var(--crimson-gradient); box-shadow: 0 4px 15px var(--ruby-glow); padding: 8px 12px; font-size: 0.85rem; color: #fff;" onclick="deleteActiveSeatBooking()">Delete Ticket</button>
+                <div style="margin-bottom: 4px;"><strong>Status:</strong> <span id="bubble-status"></span></div>
+                <strong>Allocated Name:</strong> <span id="bubble-name" style="color: var(--gold-primary); font-weight: 700;"></span><br>
+                <div id="bubble-email-row"><strong>Email:</strong> <span id="bubble-email"></span></div>
+                <div id="bubble-ticket-row"><strong>Ticket No:</strong> <span id="bubble-ticket" style="color: var(--gold-primary);"></span></div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+                    <button id="btn-make-seat-perm" class="btn-primary" style="display: none; background: var(--gold-gradient); color: #110e1c; font-weight: 800; padding: 8px 12px; font-size: 0.85rem; width: auto;" onclick="openMakePermanentForActiveSeat()">✨ Add Details & Make Permanent</button>
+                    <button id="btn-copy-seat-url" class="btn-primary" style="background: var(--gold-gradient); color: #110e1c; font-weight: 800; padding: 8px 12px; font-size: 0.85rem; width: auto;" onclick="copyActiveSeatUrl()">🔗 Copy Customer Link</button>
+                    <button id="btn-delete-seat" class="btn-primary" style="background: var(--crimson-gradient); box-shadow: 0 4px 15px var(--ruby-glow); padding: 8px 12px; font-size: 0.85rem; color: #fff; width: auto;" onclick="deleteActiveSeatBooking()">Delete Ticket</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Quick Temporary Table Hold Modal (Name Only - Excluded from Excel) -->
+    <div class="modal-overlay" id="temporary-hold-modal">
+        <div class="modal-content" style="max-width: 430px; border-color: rgba(245, 158, 11, 0.5);">
+            <div class="modal-header">
+                <h3 class="modal-title" style="color: #fbbf24;">⏳ Temporary Table Reserve</h3>
+                <button class="close-modal" onclick="closeModal('temporary-hold-modal')">&times;</button>
+            </div>
+            <form id="temp-hold-form" onsubmit="submitTemporaryHold(event)">
+                <input type="hidden" id="temp-hold-category">
+                <input type="hidden" id="temp-hold-side">
+                <input type="hidden" id="temp-hold-table-number">
+                <input type="hidden" id="temp-hold-seat-numbers">
+                <input type="hidden" id="temp-hold-is-full-table" value="true">
+
+                <div id="temp-hold-summary-text" style="background: rgba(245, 158, 11, 0.1); padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; font-size: 0.9rem; color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35);">
+                    <!-- Dynamic summary -->
+                </div>
+
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 10px 14px; margin-bottom: 18px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">
+                    ℹ️ <strong>Temporary Hold:</strong> Reserves the table/seats with just a name. <strong>Not added to Excel sheet</strong> and counted separately until made permanent.
+                </div>
+
+                <div class="form-group">
+                    <label for="temp-hold-name">Guest / Allocated Name *</label>
+                    <input type="text" id="temp-hold-name" required placeholder="Enter guest name (e.g. Mr. Perera)">
+                </div>
+
+                <button type="submit" class="btn-primary btn-temp-action" style="margin-bottom: 0;">
+                    ⏳ Confirm Temporary Reservation
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit & Make Permanent Modal (Adds All Booking Details & Syncs to Excel) -->
+    <div class="modal-overlay" id="make-permanent-modal">
+        <div class="modal-content" style="max-width: 440px;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="color: var(--gold-primary);">✨ Edit & Make Permanent</h3>
+                <button class="close-modal" onclick="closeModal('make-permanent-modal')">&times;</button>
+            </div>
+            <form id="permanent-submit-form" onsubmit="submitMakePermanent(event)">
+                <input type="hidden" id="permanent-res-id">
+
+                <div id="permanent-summary-text" style="background: rgba(212, 175, 55, 0.08); padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; font-size: 0.9rem; color: var(--gold-primary); border: 1px solid var(--border-gold);">
+                    <!-- Dynamic summary -->
+                </div>
+
+                <div style="background: rgba(57, 255, 20, 0.07); border: 1px solid rgba(57, 255, 20, 0.3); border-radius: 10px; padding: 10px 14px; margin-bottom: 18px; font-size: 0.8rem; color: #8ade80; line-height: 1.5;">
+                    ✓ Completing all booking details below will convert this temporary hold into a <strong>Permanent Booking</strong> and automatically save it to the <strong>Excel Sheet</strong>.
+                </div>
+
+                <div class="form-group">
+                    <label for="permanent-name">Guest Full Name *</label>
+                    <input type="text" id="permanent-name" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="permanent-email">Email Address *</label>
+                    <input type="email" id="permanent-email" required placeholder="john@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="permanent-ticket">Ticket Number *</label>
+                    <input type="text" id="permanent-ticket" required placeholder="KAL-1001">
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    ✓ Confirm Permanent & Save to Excel
+                </button>
+            </form>
         </div>
     </div>
 
@@ -1640,11 +1897,11 @@
                     <label for="form-name">Guest Full Name</label>
                     <input type="text" id="form-name" required placeholder="John Doe">
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="form-email-group">
                     <label for="form-email">Email Address</label>
                     <input type="email" id="form-email" required placeholder="john@example.com">
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="form-ticket-group">
                     <label for="form-ticket">Ticket Number</label>
                     <input type="text" id="form-ticket" required placeholder="KAL-1001">
                 </div>
@@ -1653,7 +1910,12 @@
                     <input type="number" id="form-ticket-count" min="1" value="1" placeholder="1">
                 </div>
 
-                <button type="submit" class="btn-primary">Confirm Kalabara Reservation</button>
+                <div class="form-group" style="background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.4); padding: 10px 14px; border-radius: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer;" onclick="toggleFormTempCheckbox(event)">
+                    <input type="checkbox" id="form-is-temporary" style="width: 18px; height: 18px; cursor: pointer; margin: 0;" onchange="handleTempCheckboxChange()">
+                    <label for="form-is-temporary" style="margin: 0; cursor: pointer; color: #fbbf24; font-size: 0.8rem; text-transform: none; letter-spacing: 0;">⏳ Reserve as <strong>Temporary Hold</strong> (Name only, not added to Excel)</label>
+                </div>
+
+                <button type="submit" class="btn-primary" id="form-submit-btn">Confirm Kalabara Reservation</button>
             </form>
         </div>
     </div>
@@ -1747,41 +2009,60 @@
 
         // Update statistics
         function updateStats() {
-            // Platinum Stats
-            const platFull = reservationsList.filter(r => r.category === 'platinum' && r.is_full_table).length;
-            const platInd = reservationsList.filter(r => r.category === 'platinum' && !r.is_full_table).length;
+            const isTemp = r => Boolean(r.is_temporary);
+            const isPerm = r => !r.is_temporary;
+
+            // Platinum Stats (Permanent vs Temporary)
+            const platFull = reservationsList.filter(r => r.category === 'platinum' && r.is_full_table && isPerm(r)).length;
+            const platInd = reservationsList.filter(r => r.category === 'platinum' && !r.is_full_table && isPerm(r)).length;
             const platSold = (platFull * 8) + platInd;
             const platCap = 108 * 8;
             const platPct = platCap > 0 ? ((platSold / platCap) * 100).toFixed(1) : 0;
+
+            const platTempFull = reservationsList.filter(r => r.category === 'platinum' && r.is_full_table && isTemp(r)).length;
+            const platTempInd = reservationsList.filter(r => r.category === 'platinum' && !r.is_full_table && isTemp(r)).length;
+            const platTemp = (platTempFull * 8) + platTempInd;
 
             const elPlatSold = document.getElementById('stats-platinum-sold');
             if (elPlatSold) elPlatSold.innerHTML = `${platSold} <span style="font-size: 1.1rem; font-weight: 500; color: var(--text-muted);">/ ${platCap}</span>`;
             const elPlatPct = document.getElementById('stats-platinum-pct');
             if (elPlatPct) elPlatPct.innerText = platPct;
+            const elPlatTemp = document.getElementById('stats-platinum-temp');
+            if (elPlatTemp) elPlatTemp.innerText = platTemp;
             const elPlatProg = document.getElementById('stats-platinum-progress');
             if (elPlatProg) elPlatProg.style.width = `${platPct}%`;
 
-            // Gold Stats
-            const goldFull = reservationsList.filter(r => r.category === 'gold' && r.is_full_table).length;
-            const goldInd = reservationsList.filter(r => r.category === 'gold' && !r.is_full_table).length;
+            // Gold Stats (Permanent vs Temporary)
+            const goldFull = reservationsList.filter(r => r.category === 'gold' && r.is_full_table && isPerm(r)).length;
+            const goldInd = reservationsList.filter(r => r.category === 'gold' && !r.is_full_table && isPerm(r)).length;
             const goldSold = (goldFull * 8) + goldInd;
             const goldCap = 144 * 8;
             const goldPct = goldCap > 0 ? ((goldSold / goldCap) * 100).toFixed(1) : 0;
+
+            const goldTempFull = reservationsList.filter(r => r.category === 'gold' && r.is_full_table && isTemp(r)).length;
+            const goldTempInd = reservationsList.filter(r => r.category === 'gold' && !r.is_full_table && isTemp(r)).length;
+            const goldTemp = (goldTempFull * 8) + goldTempInd;
 
             const elGoldSold = document.getElementById('stats-gold-sold');
             if (elGoldSold) elGoldSold.innerHTML = `${goldSold} <span style="font-size: 1.1rem; font-weight: 500; color: var(--text-muted);">/ ${goldCap}</span>`;
             const elGoldPct = document.getElementById('stats-gold-pct');
             if (elGoldPct) elGoldPct.innerText = goldPct;
+            const elGoldTemp = document.getElementById('stats-gold-temp');
+            if (elGoldTemp) elGoldTemp.innerText = goldTemp;
             const elGoldProg = document.getElementById('stats-gold-progress');
             if (elGoldProg) elGoldProg.style.width = `${goldPct}%`;
 
-            // Standing Stats
-            const standingSold = reservationsList.filter(r => r.category === 'standing').length;
+            // Standing Stats (Permanent vs Temporary)
+            const standingSold = reservationsList.filter(r => r.category === 'standing' && isPerm(r)).length;
+            const standingTemp = reservationsList.filter(r => r.category === 'standing' && isTemp(r)).length;
             const elStandingSold = document.getElementById('stats-standing-sold');
             if (elStandingSold) elStandingSold.innerText = standingSold;
+            const elStandingTemp = document.getElementById('stats-standing-temp');
+            if (elStandingTemp) elStandingTemp.innerText = standingTemp;
 
-            // Total Tickets Sold Stats
+            // Total Permanent Sold Stats
             const totalSold = platSold + goldSold + standingSold;
+            const totalTemporary = platTemp + goldTemp + standingTemp;
             const totalSeatedCap = platCap + goldCap;
             const totalSeatedSold = platSold + goldSold;
             const totalSeatedPct = totalSeatedCap > 0 ? ((totalSeatedSold / totalSeatedCap) * 100).toFixed(1) : 0;
@@ -1796,6 +2077,15 @@
 
             const elTotalProg = document.getElementById('stats-total-progress');
             if (elTotalProg) elTotalProg.style.width = `${totalSeatedPct}%`;
+
+            // Total Temporary Hold Stats (Separate Count)
+            const elTempSold = document.getElementById('stats-temporary-sold');
+            if (elTempSold) elTempSold.innerText = totalTemporary;
+
+            const elTempSub = document.getElementById('stats-temporary-sub');
+            if (elTempSub) {
+                elTempSub.innerHTML = `<span style="color: var(--gold-primary);">♠ ${platTemp}</span> &bull; <span style="color: #ff758f;">♥ ${goldTemp}</span> &bull; <span style="color: #c77dff;">♣ ${standingTemp}</span>`;
+            }
 
             const elHeaderTotal = document.getElementById('header-total-sold');
             if (elHeaderTotal) elHeaderTotal.innerText = totalSold;
@@ -1837,11 +2127,18 @@
                 );
                 const isFull = bookingsForTable.some(r => r.is_full_table);
                 const bookedSeatsCount = bookingsForTable.length;
+                const hasTemp = bookingsForTable.some(r => Boolean(r.is_temporary));
+                const allTemp = bookingsForTable.length > 0 && bookingsForTable.every(r => Boolean(r.is_temporary));
 
-                if (isFull || bookedSeatsCount >= 8) {
+                if (allTemp) {
+                    btn.classList.add('temporary-reserved');
+                    btn.title = 'Temporarily Reserved: ' + [...new Set(bookingsForTable.map(b => b.name))].join(', ');
+                } else if (isFull || bookedSeatsCount >= 8) {
                     btn.classList.add('fully-reserved');
+                    if (hasTemp) btn.classList.add('has-temporary');
                 } else if (bookedSeatsCount > 0) {
                     btn.classList.add('partially-reserved');
+                    if (hasTemp) btn.classList.add('has-temporary');
                 } else {
                     btn.classList.add('available');
                 }
@@ -1874,12 +2171,40 @@
                 parseInt(r.table_number, 10) === parseInt(tableNumber, 10)
             );
             const isFullTableBooked = bookings.some(r => r.is_full_table);
+            const tempBookings = bookings.filter(r => Boolean(r.is_temporary));
 
             const bubble = document.getElementById('seat-detail-bubble');
             bubble.style.display = 'none';
 
             const reserveFullBtn = document.getElementById('btn-reserve-full');
+            const tempHoldFullBtn = document.getElementById('btn-temp-hold-full');
+            const fullTableTempActions = document.getElementById('full-table-temp-actions');
             const hint = document.getElementById('seat-select-hint');
+
+            // Temporary Allocation Banner (Shows who is temporarily allocated to this table)
+            const tempBanner = document.getElementById('modal-temporary-banner');
+            const tempNamesContainer = document.getElementById('modal-temporary-names');
+            if (tempBookings.length > 0 && tempBanner && tempNamesContainer) {
+                const fullTemp = tempBookings.find(r => r.is_full_table);
+                if (fullTemp) {
+                    tempNamesContainer.innerHTML = `<strong>Full Table (All 8 Seats)</strong> allocated to: <span style="color: #fbbf24; font-weight: 800; font-size: 1rem;">${escapeModalHtml(fullTemp.name)}</span>`;
+                } else {
+                    // Group temporary seats by name
+                    const byName = {};
+                    tempBookings.forEach(b => {
+                        const n = b.name || 'Unnamed';
+                        if (!byName[n]) byName[n] = [];
+                        if (b.seat_number) byName[n].push(`Seat ${b.seat_number}`);
+                    });
+                    const lines = Object.entries(byName).map(([name, seatsArr]) => {
+                        return `• <strong style="color: #fbbf24;">${escapeModalHtml(name)}</strong> (${seatsArr.join(', ')})`;
+                    });
+                    tempNamesContainer.innerHTML = lines.join('<br>');
+                }
+                tempBanner.style.display = 'block';
+            } else if (tempBanner) {
+                tempBanner.style.display = 'none';
+            }
 
             // Search Match Banner in Modal
             const matchBanner = document.getElementById('modal-search-match-banner');
@@ -1890,7 +2215,8 @@
                 const res = firstMatch.reservation;
                 if (res) {
                     const seatPart = res.is_full_table ? 'Full Table (8 Seats)' : (res.seat_number ? `Seat ${res.seat_number}` : '');
-                    matchBanner.innerHTML = `🔍 <strong>Search Match:</strong> ${escapeModalHtml(res.name)} ${seatPart ? '• ' + seatPart : ''} • Order: <span style="color:#fff; font-family:monospace;">${escapeModalHtml(res.ticket_number)}</span>`;
+                    const statusTag = res.is_temporary ? '⏳ TEMP HOLD' : `Order: ${escapeModalHtml(res.ticket_number)}`;
+                    matchBanner.innerHTML = `🔍 <strong>Search Match:</strong> ${escapeModalHtml(res.name)} ${seatPart ? '• ' + seatPart : ''} • <span style="color:#fff; font-family:monospace;">${statusTag}</span>`;
                 } else {
                     matchBanner.innerHTML = `🔍 <strong>Search Match:</strong> Table ${side.toUpperCase().substring(0,1)}${tableNumber}`;
                 }
@@ -1901,19 +2227,43 @@
 
             if (isFullTableBooked) {
                 const fullBooking = bookings.find(r => r.is_full_table);
+                const isFullTemp = Boolean(fullBooking.is_temporary);
+
                 reserveFullBtn.style.display = 'none';
+                if (tempHoldFullBtn) tempHoldFullBtn.style.display = 'none';
                 hint.style.display = 'none';
+
+                if (isFullTemp && fullTableTempActions) {
+                    fullTableTempActions.style.display = 'flex';
+                    const makePermBtn = document.getElementById('btn-make-table-perm');
+                    const releaseTempBtn = document.getElementById('btn-release-table-temp');
+                    if (makePermBtn) makePermBtn.onclick = () => openMakePermanentModal(fullBooking.id);
+                    if (releaseTempBtn) releaseTempBtn.onclick = async () => {
+                        if (confirm(`Release temporary table hold for ${fullBooking.name}?`)) {
+                            await executeDelete(fullBooking.id);
+                            closeModal('seating-modal');
+                        }
+                    };
+                } else if (fullTableTempActions) {
+                    fullTableTempActions.style.display = 'none';
+                }
 
                 for (let s = 1; s <= 8; s++) {
                     const seatEl = document.getElementById(`seat-${s}`);
-                    seatEl.className = 'seat-circle reserved';
+                    seatEl.className = isFullTemp ? 'seat-circle temporary' : 'seat-circle reserved';
                     if (tableMatches.length > 0) {
                         seatEl.classList.add('search-matched-seat');
                     }
                     seatEl.onclick = () => showBubble(fullBooking);
                 }
+
+                // Automatically show details bubble when clicking a full table (especially helpful for temporary tables)
+                showBubble(fullBooking);
             } else {
-                reserveFullBtn.style.display = bookings.length === 0 ? 'block' : 'none';
+                const isTableEmpty = bookings.length === 0;
+                reserveFullBtn.style.display = isTableEmpty ? 'block' : 'none';
+                if (tempHoldFullBtn) tempHoldFullBtn.style.display = isTableEmpty ? 'block' : 'none';
+                if (fullTableTempActions) fullTableTempActions.style.display = 'none';
                 hint.style.display = 'block';
 
                 for (let s = 1; s <= 8; s++) {
@@ -1921,7 +2271,7 @@
                     const seatBooking = bookings.find(r => parseInt(r.seat_number, 10) === s);
 
                     if (seatBooking) {
-                        seatEl.className = 'seat-circle reserved';
+                        seatEl.className = Boolean(seatBooking.is_temporary) ? 'seat-circle temporary' : 'seat-circle reserved';
                         const isMatchedSeat = tableMatches.some(m => m.seatNumber === s || (m.reservation && parseInt(m.reservation.seat_number, 10) === s));
                         if (isMatchedSeat) {
                             seatEl.classList.add('search-matched-seat');
@@ -1931,6 +2281,11 @@
                         seatEl.className = 'seat-circle available';
                         seatEl.onclick = () => toggleSeatSelection(s);
                     }
+                }
+
+                // If there are temporary seat bookings and no search match, show the first temporary seat in the bubble
+                if (tableMatches.length === 0 && tempBookings.length > 0) {
+                    showBubble(tempBookings[0]);
                 }
             }
 
@@ -1966,18 +2321,255 @@
 
         function updateSelectedSeatsButton() {
             const btn = document.getElementById('btn-book-selected');
+            const tempBtn = document.getElementById('btn-temp-hold-selected');
             const count = selectedSeats.length;
-            btn.innerText = `Book Selected Seats (${count})`;
-            btn.style.display = count > 0 ? 'block' : 'none';
+            if (btn) {
+                btn.innerText = `Book Selected Seats (${count})`;
+                btn.style.display = count > 0 ? 'block' : 'none';
+            }
+            if (tempBtn) {
+                tempBtn.innerText = `⏳ Temporary Hold Selected Seats (${count})`;
+                tempBtn.style.display = count > 0 ? 'block' : 'none';
+            }
         }
 
         function showBubble(booking) {
             activeBooking = booking;
+            const isTemp = Boolean(booking.is_temporary);
             const bubble = document.getElementById('seat-detail-bubble');
+            const statusEl = document.getElementById('bubble-status');
+            const emailRow = document.getElementById('bubble-email-row');
+            const ticketRow = document.getElementById('bubble-ticket-row');
+            const btnMakePerm = document.getElementById('btn-make-seat-perm');
+            const btnCopyUrl = document.getElementById('btn-copy-seat-url');
+            const btnDelete = document.getElementById('btn-delete-seat');
+
+            if (statusEl) {
+                statusEl.innerHTML = isTemp
+                    ? `<span class="badge-status-temp">⏳ Temporary Hold (Not in Excel)</span>`
+                    : `<span class="badge-status-perm">✓ Permanent (Synced to Excel)</span>`;
+            }
+
             document.getElementById('bubble-name').innerText = booking.name;
-            document.getElementById('bubble-email').innerText = booking.email;
-            document.getElementById('bubble-ticket').innerText = booking.ticket_number;
+            document.getElementById('bubble-email').innerText = booking.email || 'Not added yet';
+            document.getElementById('bubble-ticket').innerText = isTemp ? 'Pending Permanent Confirmation' : booking.ticket_number;
+
+            if (emailRow) emailRow.style.display = isTemp && !booking.email ? 'none' : 'block';
+            if (btnMakePerm) btnMakePerm.style.display = isTemp ? 'inline-block' : 'none';
+            if (btnCopyUrl) btnCopyUrl.style.display = isTemp ? 'none' : 'inline-block';
+            if (btnDelete) btnDelete.innerText = isTemp ? '🗑️ Release Hold' : 'Delete Ticket';
+
             bubble.style.display = 'block';
+        }
+
+        // Open Temporary Hold Modal (Name Only)
+        function openTemporaryHoldModal(mode) {
+            if (mode === 'seats' && selectedSeats.length === 0) return;
+            closeModal('seating-modal');
+
+            const label = activeSide.toUpperCase().substring(0, 1) + activeTable;
+            const isFull = mode === 'full';
+            const seatsSorted = isFull ? [] : [...selectedSeats].sort((a, b) => a - b);
+
+            document.getElementById('temp-hold-category').value = activeCategory;
+            document.getElementById('temp-hold-side').value = activeSide;
+            document.getElementById('temp-hold-table-number').value = activeTable;
+            document.getElementById('temp-hold-seat-numbers').value = isFull ? '' : JSON.stringify(seatsSorted);
+            document.getElementById('temp-hold-is-full-table').value = isFull ? 'true' : 'false';
+            document.getElementById('temp-hold-name').value = '';
+
+            const summary = isFull
+                ? `Section: ${activeCategory.toUpperCase()} | Table: ${label} (Full Table - 8 Seats)`
+                : `Section: ${activeCategory.toUpperCase()} | Table: ${label} | ${seatsSorted.length === 1 ? 'Seat' : 'Seats'}: ${seatsSorted.join(', ')}`;
+            document.getElementById('temp-hold-summary-text').innerText = summary;
+
+            openModal('temporary-hold-modal');
+        }
+
+        async function submitTemporaryHold(event) {
+            event.preventDefault();
+
+            const seatNumbersRaw = document.getElementById('temp-hold-seat-numbers').value;
+            const payload = {
+                category: document.getElementById('temp-hold-category').value,
+                side: document.getElementById('temp-hold-side').value,
+                table_number: document.getElementById('temp-hold-table-number').value,
+                seat_numbers: seatNumbersRaw ? JSON.parse(seatNumbersRaw) : [],
+                is_full_table: document.getElementById('temp-hold-is-full-table').value,
+                is_temporary: true,
+                name: document.getElementById('temp-hold-name').value
+            };
+
+            showLoader('Saving temporary table reservation...');
+
+            try {
+                const response = await fetch('/api/bookings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    closeModal('temporary-hold-modal');
+                    showToast(data.message || 'Temporary reservation saved (Excluded from Excel).', 'success');
+                    await fetchBookingsAndRender();
+                    reloadRecentBookingsTable();
+                } else {
+                    showToast("Temporary hold failed: " + (data.message || "Unknown error"), 'error');
+                }
+            } catch (err) {
+                console.error("Temporary hold post error:", err);
+                showToast("An error occurred while saving temporary hold.", 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Open Edit & Make Permanent Modal
+        function openMakePermanentForActiveSeat() {
+            if (!activeBooking || !activeBooking.id) return;
+            openMakePermanentModal(activeBooking.id);
+        }
+
+        function openMakePermanentModal(bookingId) {
+            const booking = reservationsList.find(r => String(r.id) === String(bookingId));
+            if (!booking) {
+                showToast("Reservation not found.", "error");
+                return;
+            }
+
+            closeModal('seating-modal');
+
+            document.getElementById('permanent-res-id').value = booking.id;
+            document.getElementById('permanent-name').value = booking.name || '';
+            document.getElementById('permanent-email').value = booking.email || '';
+            document.getElementById('permanent-ticket').value = (booking.ticket_number && !String(booking.ticket_number).startsWith('TEMP-')) ? booking.ticket_number : '';
+
+            let locText = '';
+            if (booking.category === 'standing') {
+                locText = `STANDING (${(booking.side || 'Center').toUpperCase()})`;
+            } else {
+                const tbl = (booking.side ? booking.side.toUpperCase().substring(0, 1) : '') + booking.table_number;
+                const seatDesc = booking.is_full_table ? 'Full Table (8 Seats)' : `Seat ${booking.seat_number}`;
+                locText = `${booking.category.toUpperCase()} | Table ${tbl} (${seatDesc})`;
+            }
+
+            document.getElementById('permanent-summary-text').innerHTML = `<strong>Converting Temporary Hold:</strong> ${locText}<br>Currently Allocated To: <strong>${escapeModalHtml(booking.name)}</strong>`;
+            openModal('make-permanent-modal');
+        }
+        window.openMakePermanentModal = openMakePermanentModal;
+
+        async function submitMakePermanent(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('permanent-res-id').value;
+            const payload = {
+                make_permanent: true,
+                is_temporary: false,
+                name: document.getElementById('permanent-name').value,
+                email: document.getElementById('permanent-email').value,
+                ticket_number: document.getElementById('permanent-ticket').value
+            };
+
+            showLoader('Converting to permanent booking & syncing to Excel...');
+
+            try {
+                const response = await fetch(`/api/bookings/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    closeModal('make-permanent-modal');
+                    showToast(data.message || 'Reservation is now permanent and synced to Excel!', 'success');
+
+                    // Show confirmation modal with customer locator link
+                    if (data.reservation) {
+                        const res = data.reservation;
+                        document.getElementById('success-guest-name').innerText = res.name;
+                        document.getElementById('success-category').innerText = res.category.toUpperCase();
+                        document.getElementById('success-ticket').innerText = res.ticket_number;
+
+                        let detailsText = '';
+                        if (res.category === 'standing') {
+                            detailsText = `${(res.side || 'center').toUpperCase()} Standing`;
+                        } else if (res.is_full_table) {
+                            detailsText = `Table ${res.side.toUpperCase().substring(0,1)}${res.table_number} (Full Table)`;
+                        } else {
+                            detailsText = `Table ${res.side.toUpperCase().substring(0,1)}${res.table_number} (Seat ${res.seat_number})`;
+                        }
+                        document.getElementById('success-details').innerText = detailsText;
+
+                        const customerUrl = `${window.location.origin}/seat/${encodeURIComponent(res.ticket_number)}`;
+                        const urlInput = document.getElementById('success-customer-url');
+                        if (urlInput) urlInput.value = customerUrl;
+
+                        openModal('success-modal');
+                    }
+
+                    await fetchBookingsAndRender();
+                    reloadRecentBookingsTable();
+                } else {
+                    showToast("Update failed: " + (data.message || "Unknown error"), 'error');
+                }
+            } catch (err) {
+                console.error("Make permanent error:", err);
+                showToast("An error occurred while converting the reservation.", 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function toggleFormTempCheckbox(event) {
+            if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'LABEL') {
+                const cb = document.getElementById('form-is-temporary');
+                if (cb) {
+                    cb.checked = !cb.checked;
+                    handleTempCheckboxChange();
+                }
+            }
+        }
+
+        function handleTempCheckboxChange() {
+            const isTemp = document.getElementById('form-is-temporary').checked;
+            const emailInput = document.getElementById('form-email');
+            const ticketInput = document.getElementById('form-ticket');
+            const emailGroup = document.getElementById('form-email-group');
+            const ticketGroup = document.getElementById('form-ticket-group');
+            const submitBtn = document.getElementById('form-submit-btn');
+
+            if (isTemp) {
+                emailInput.removeAttribute('required');
+                ticketInput.removeAttribute('required');
+                if (emailGroup) emailGroup.style.display = 'none';
+                if (ticketGroup) ticketGroup.style.display = 'none';
+                if (submitBtn) {
+                    submitBtn.innerText = '⏳ Confirm Temporary Hold (No Excel Sync)';
+                    submitBtn.classList.add('btn-temp-action');
+                }
+            } else {
+                emailInput.setAttribute('required', 'required');
+                ticketInput.setAttribute('required', 'required');
+                if (emailGroup) emailGroup.style.display = 'block';
+                if (ticketGroup) ticketGroup.style.display = 'block';
+                if (submitBtn) {
+                    submitBtn.innerText = 'Confirm Kalabara Reservation';
+                    submitBtn.classList.remove('btn-temp-action');
+                }
+            }
         }
 
         function openMultiSeatBooking() {
@@ -2046,6 +2638,11 @@
             document.getElementById('form-name').value = '';
             document.getElementById('form-email').value = '';
             document.getElementById('form-ticket').value = '';
+            const tempCb = document.getElementById('form-is-temporary');
+            if (tempCb) {
+                tempCb.checked = false;
+                handleTempCheckboxChange();
+            }
         }
 
         async function submitBooking(event) {
@@ -2053,6 +2650,7 @@
 
             const category = document.getElementById('form-category').value;
             const seatNumbersRaw = document.getElementById('form-seat-numbers').value;
+            const isTemp = document.getElementById('form-is-temporary') ? document.getElementById('form-is-temporary').checked : false;
             const payload = {
                 category: category,
                 side: document.getElementById('form-side').value,
@@ -2060,13 +2658,14 @@
                 seat_number: document.getElementById('form-seat-number').value,
                 seat_numbers: seatNumbersRaw ? JSON.parse(seatNumbersRaw) : [],
                 is_full_table: document.getElementById('form-is-full-table').value,
+                is_temporary: isTemp,
                 name: document.getElementById('form-name').value,
                 email: document.getElementById('form-email').value,
                 ticket_number: document.getElementById('form-ticket').value,
                 ticket_count: category === 'standing' ? parseInt(document.getElementById('form-ticket-count').value || 1, 10) : 1
             };
 
-            showLoader('Creating Kalabara reservation...');
+            showLoader(isTemp ? 'Saving temporary reservation...' : 'Creating Kalabara reservation...');
 
             try {
                 const response = await fetch('/api/bookings', {
@@ -2083,39 +2682,45 @@
 
                 if (response.ok && data.success) {
                     closeModal('booking-form-modal');
-                    
-                    document.getElementById('success-guest-name').innerText = data.reservation.name;
-                    document.getElementById('success-category').innerText = data.reservation.category.toUpperCase();
-                    
-                    const reservations = data.reservations || [data.reservation];
-                    
-                    if (reservations.length > 1) {
-                        const firstTicket = reservations[0].ticket_number;
-                        const lastTicket = reservations[reservations.length - 1].ticket_number;
-                        document.getElementById('success-ticket').innerText = `${firstTicket} to ${lastTicket} (${reservations.length} Tickets)`;
+
+                    if (data.is_temporary) {
+                        showToast(data.message || 'Temporary hold created (Excluded from Excel).', 'success');
                     } else {
-                        document.getElementById('success-ticket').innerText = data.reservation.ticket_number;
+                        document.getElementById('success-guest-name').innerText = data.reservation.name;
+                        document.getElementById('success-category').innerText = data.reservation.category.toUpperCase();
+                        
+                        const reservations = data.reservations || [data.reservation];
+                        
+                        if (reservations.length > 1) {
+                            const firstTicket = reservations[0].ticket_number;
+                            const lastTicket = reservations[reservations.length - 1].ticket_number;
+                            document.getElementById('success-ticket').innerText = firstTicket === lastTicket
+                                ? `${firstTicket} (${reservations.length} Tickets)`
+                                : `${firstTicket} to ${lastTicket} (${reservations.length} Tickets)`;
+                        } else {
+                            document.getElementById('success-ticket').innerText = data.reservation.ticket_number;
+                        }
+                        
+                        let detailsText = '';
+                        if (data.reservation.category === 'standing') {
+                            detailsText = `${data.reservation.side.toUpperCase()} Standing` + (reservations.length > 1 ? ` (${reservations.length} Tickets)` : '');
+                        } else if (data.reservation.is_full_table) {
+                            detailsText = `Table ${data.reservation.side.toUpperCase().substring(0,1)}${data.reservation.table_number} (Full Table)`;
+                        } else {
+                            const tableLabel = `${data.reservation.side.toUpperCase().substring(0,1)}${data.reservation.table_number}`;
+                            const seatNums = reservations.map(r => r.seat_number).sort((a, b) => a - b);
+                            const seatWord = seatNums.length === 1 ? 'Seat' : 'Seats';
+                            detailsText = `Table ${tableLabel} (${seatWord} ${seatNums.join(', ')})`;
+                        }
+                        document.getElementById('success-details').innerText = detailsText;
+                        
+                        const primaryTicket = data.reservation.ticket_number;
+                        const customerUrl = `${window.location.origin}/seat/${encodeURIComponent(primaryTicket)}`;
+                        const urlInput = document.getElementById('success-customer-url');
+                        if (urlInput) urlInput.value = customerUrl;
+                        
+                        openModal('success-modal');
                     }
-                    
-                    let detailsText = '';
-                    if (data.reservation.category === 'standing') {
-                        detailsText = `${data.reservation.side.toUpperCase()} Standing` + (reservations.length > 1 ? ` (${reservations.length} Tickets)` : '');
-                    } else if (data.reservation.is_full_table) {
-                        detailsText = `Table ${data.reservation.side.toUpperCase().substring(0,1)}${data.reservation.table_number} (Full Table)`;
-                    } else {
-                        const tableLabel = `${data.reservation.side.toUpperCase().substring(0,1)}${data.reservation.table_number}`;
-                        const seatNums = reservations.map(r => r.seat_number).sort((a, b) => a - b);
-                        const seatWord = seatNums.length === 1 ? 'Seat' : 'Seats';
-                        detailsText = `Table ${tableLabel} (${seatWord} ${seatNums.join(', ')})`;
-                    }
-                    document.getElementById('success-details').innerText = detailsText;
-                    
-                    const primaryTicket = data.reservation.ticket_number;
-                    const customerUrl = `${window.location.origin}/seat/${encodeURIComponent(primaryTicket)}`;
-                    const urlInput = document.getElementById('success-customer-url');
-                    if (urlInput) urlInput.value = customerUrl;
-                    
-                    openModal('success-modal');
                     
                     await fetchBookingsAndRender();
                     reloadRecentBookingsTable();
@@ -2138,11 +2743,11 @@
                 if (!container) return;
 
                 if (!data.reservations || data.reservations.length === 0) {
-                    container.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">No reservations found.</td></tr>';
+                    container.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-muted);">No reservations found.</td></tr>';
                     return;
                 }
 
-                const sorted = data.reservations.sort((a,b) => b.id - a.id).slice(0, 10);
+                const sorted = data.reservations.sort((a,b) => b.id - a.id).slice(0, 15);
                 
                 container.innerHTML = '';
                 sorted.forEach(b => {
@@ -2150,20 +2755,29 @@
                     const date = b.created_at ? new Date(b.created_at).toISOString().replace('T', ' ').substring(0, 16) : 'N/A';
                     const tableLabel = b.table_number ? (b.side.toUpperCase().substring(0,1) + b.table_number) : 'N/A';
                     const seatLabel = b.is_full_table ? 'Full Table' : (b.seat_number ? 'Seat ' + b.seat_number : 'N/A');
+                    const isTemp = Boolean(b.is_temporary);
+
+                    const statusBadge = isTemp
+                        ? `<span class="badge-status-temp" title="Excluded from Excel Sheet">⏳ Temporary</span>`
+                        : `<span class="badge-status-perm" title="Synced to Excel Sheet">✓ Permanent</span>`;
+
+                    const actionsHtml = isTemp
+                        ? `<button onclick="openMakePermanentModal('${b.id}')" class="btn-primary" style="padding: 4px 10px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 800; margin-right: 6px; width: auto;" title="Edit Details & Make Permanent">✨ Make Permanent</button>
+                           <button onclick="confirmDeleteBooking('${b.id}')" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">Release</button>`
+                        : `<button onclick="copyCustomerSeatUrl('${encodeURIComponent(b.ticket_number)}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 700; margin-right: 6px; width: auto;" title="Copy Customer Anonymous Seat Locator Link">🔗 Copy Link</button>
+                           <button onclick="confirmDeleteBooking('${b.id}')" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem;">Delete</button>`;
 
                     row.innerHTML = `
                         <td>${date}</td>
                         <td><span class="category-badge badge-${b.category}">${b.category}</span></td>
+                        <td>${statusBadge}</td>
                         <td>${b.side ? b.side.charAt(0).toUpperCase() + b.side.slice(1) : 'Center'}</td>
                         <td>${tableLabel}</td>
                         <td>${seatLabel}</td>
-                        <td>${b.name}</td>
-                        <td>${b.email}</td>
-                        <td>${b.ticket_number}</td>
-                        <td>
-                            <button onclick="copyCustomerSeatUrl('${encodeURIComponent(b.ticket_number)}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 700; margin-right: 6px;" title="Copy Customer Anonymous Seat Locator Link">🔗 Copy Link</button>
-                            <button onclick="confirmDeleteBooking('${b.id}')" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem;">Delete</button>
-                        </td>
+                        <td><strong>${escapeModalHtml(b.name)}</strong></td>
+                        <td>${escapeModalHtml(b.email || '-')}</td>
+                        <td>${isTemp ? 'TEMP HOLD' : escapeModalHtml(b.ticket_number)}</td>
+                        <td>${actionsHtml}</td>
                     `;
                     container.appendChild(row);
                 });
@@ -2174,7 +2788,10 @@
 
         async function deleteActiveSeatBooking() {
             if (!activeBooking || !activeBooking.id) return;
-            if (confirm(`Are you sure you want to cancel the reservation for ${activeBooking.name} (Ticket: ${activeBooking.ticket_number})?`)) {
+            const msg = activeBooking.is_temporary
+                ? `Are you sure you want to release the temporary hold for ${activeBooking.name}?`
+                : `Are you sure you want to cancel the permanent reservation for ${activeBooking.name} (Ticket: ${activeBooking.ticket_number})?`;
+            if (confirm(msg)) {
                 await executeDelete(activeBooking.id);
                 closeModal('seating-modal');
             }
@@ -2183,7 +2800,10 @@
         async function confirmDeleteBooking(id) {
             const booking = reservationsList.find(r => r.id == id);
             if (!booking) return;
-            if (confirm(`Are you sure you want to cancel the reservation for ${booking.name} (Ticket: ${booking.ticket_number})?`)) {
+            const msg = booking.is_temporary
+                ? `Are you sure you want to release the temporary hold for ${booking.name}?`
+                : `Are you sure you want to cancel the permanent reservation for ${booking.name} (Ticket: ${booking.ticket_number})?`;
+            if (confirm(msg)) {
                 await executeDelete(id);
             }
         }

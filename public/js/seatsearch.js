@@ -58,8 +58,9 @@
                     tableNumber: res.table_number,
                     seatNumber: res.seat_number,
                     isFullTable: res.is_full_table,
+                    isTemporary: Boolean(res.is_temporary),
                     category: res.category,
-                    matchReason: nameMatch ? 'Name' : (emailMatch ? 'Email' : (ticketMatch ? 'Order No' : 'Table'))
+                    matchReason: (nameMatch ? 'Name' : (emailMatch ? 'Email' : (ticketMatch ? 'Order No' : 'Table'))) + (res.is_temporary ? ' (⏳ Temp Hold)' : '')
                 });
             }
         });
@@ -165,6 +166,7 @@
                 };
 
                 const res = item.reservation;
+                const isTemp = res && Boolean(res.is_temporary);
                 let locationBadge = '';
                 if (item.type === 'standing') {
                     locationBadge = `♣ Standing (${item.side.toUpperCase()})`;
@@ -174,17 +176,19 @@
                     locationBadge = `Table ${sideLetter}${item.tableNumber} • ${seatPart}`;
                 }
 
+                const tempTag = isTemp ? `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; border-radius: 4px; padding: 1px 6px; font-size: 0.7rem; font-weight: 700; margin-left: 6px;">⏳ TEMP HOLD</span>` : '';
+
                 card.innerHTML = `
                     <div class="search-item-header">
-                        <span class="search-item-name">${res ? escapeHtml(res.name) : 'Table ' + item.tableNumber}</span>
+                        <span class="search-item-name">${res ? escapeHtml(res.name) : 'Table ' + item.tableNumber}${tempTag}</span>
                         <span class="search-item-badge">${locationBadge}</span>
                     </div>
                     <div class="search-item-sub">
-                        <span>${res && res.ticket_number ? 'Order No: ' + escapeHtml(res.ticket_number) : ''}</span>
+                        <span>${isTemp ? '⚠️ Temporary Hold • Excluded from Excel' : (res && res.ticket_number ? 'Order No: ' + escapeHtml(res.ticket_number) : '')}</span>
                         <span>${res && res.email ? escapeHtml(res.email) : ''}</span>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
-                        ${res && res.ticket_number ? `<button type="button" class="search-view-btn" style="background: rgba(245, 207, 109, 0.2); border-color: #f5cf6d; color: #f5cf6d;" onclick="event.stopPropagation(); window.copyCustomerSeatUrl('${encodeURIComponent(res.ticket_number)}');">🔗 Copy Link</button>` : ''}
+                        ${isTemp ? `<button type="button" class="search-view-btn" style="background: rgba(245, 158, 11, 0.25); border-color: #f59e0b; color: #fbbf24; font-weight: 700;" onclick="event.stopPropagation(); if (window.openMakePermanentModal) window.openMakePermanentModal('${res.id}');">✨ Make Permanent</button>` : (res && res.ticket_number ? `<button type="button" class="search-view-btn" style="background: rgba(245, 207, 109, 0.2); border-color: #f5cf6d; color: #f5cf6d;" onclick="event.stopPropagation(); window.copyCustomerSeatUrl('${encodeURIComponent(res.ticket_number)}');">🔗 Copy Link</button>` : '')}
                         <button type="button" class="search-view-btn" onclick="event.stopPropagation(); window.openMatchedModal(${index});">Inspect / View &rarr;</button>
                     </div>
                 `;

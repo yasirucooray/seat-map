@@ -23,12 +23,20 @@ class CustomerSeatController extends Controller
         $customerInfo = null;
 
         if (!empty($ticketQuery)) {
-            // Find by exact ticket number
-            $customerBookings = Reservation::where('ticket_number', $ticketQuery)->get();
+            // Find by exact ticket number (only permanent bookings)
+            $customerBookings = Reservation::where('ticket_number', $ticketQuery)
+                ->where(function ($q) {
+                    $q->where('is_temporary', false)->orWhereNull('is_temporary');
+                })
+                ->get();
 
             // Fallback case-insensitive
             if ($customerBookings->isEmpty()) {
-                $customerBookings = Reservation::whereRaw('LOWER(ticket_number) = ?', [strtolower($ticketQuery)])->get();
+                $customerBookings = Reservation::whereRaw('LOWER(ticket_number) = ?', [strtolower($ticketQuery)])
+                    ->where(function ($q) {
+                        $q->where('is_temporary', false)->orWhereNull('is_temporary');
+                    })
+                    ->get();
             }
 
             if ($customerBookings->isNotEmpty()) {
