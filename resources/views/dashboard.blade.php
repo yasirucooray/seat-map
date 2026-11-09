@@ -794,6 +794,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 20px 16px;
+            box-sizing: border-box;
+            overflow-y: auto;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
@@ -811,10 +814,30 @@
             border-radius: 24px;
             width: 100%;
             max-width: 480px;
-            padding: 30px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            box-sizing: border-box;
+            padding: 24px 28px;
+            margin: auto;
             transform: scale(0.9);
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
+        }
+
+        .modal-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .modal-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+        .modal-content::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.45);
+            border-radius: 8px;
+        }
+        .modal-content::-webkit-scrollbar-thumb:hover {
+            background: var(--gold-primary);
         }
 
         .modal-overlay.active .modal-content {
@@ -825,9 +848,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             border-bottom: 1px solid rgba(212, 175, 55, 0.15);
             padding-bottom: 12px;
+            position: sticky;
+            top: -24px;
+            background: #110e1c;
+            z-index: 25;
+            padding-top: 4px;
         }
 
         .modal-title {
@@ -2429,6 +2457,15 @@
             }
 
             updateSelectedSeatsButton();
+
+            if (selectedSeats.length > 0) {
+                const bookBtn = document.getElementById('btn-book-selected');
+                if (bookBtn) {
+                    setTimeout(() => {
+                        bookBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 50);
+                }
+            }
         }
 
         function updateSelectedSeatsButton() {
@@ -2506,6 +2543,9 @@
             if (btnDelete) btnDelete.innerText = isTemp ? '🗑️ Release Hold' : 'Delete Ticket';
 
             bubble.style.display = 'block';
+            setTimeout(() => {
+                bubble.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
         }
 
         async function toggleActiveSeatCheckIn() {
