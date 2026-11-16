@@ -18,8 +18,8 @@ class ArenaV2Controller extends Controller
 
     /**
      * Render the V2 Admin Dashboard (13x10 Tables Map - 130 Tables, 8 Seats per Table, Numbered 1 to 130).
-     * Rows 1-6 (Tables 1-60): Platinum (60 tables * 8 seats = 480 seats)
-     * Rows 7-13 (Tables 61-130): Gold (70 tables * 8 seats = 560 seats)
+     * Rows 1-5 (Tables 1-50): VIP / Platinum (50 tables * 8 seats = 400 seats)
+     * Rows 6-13 (Tables 51-130): Gold (80 tables * 8 seats = 640 seats)
      * Bottom Left & Right: Standing Areas + Center FOH & Entrance
      */
     public function index()
@@ -50,7 +50,7 @@ class ArenaV2Controller extends Controller
         $is_temporary = filter_var($request->input('is_temporary', false), FILTER_VALIDATE_BOOLEAN);
 
         $rules = [
-            'category' => 'required|in:platinum,gold,standing',
+            'category' => 'required|in:vip,platinum,gold,standing',
             'name' => 'required|string|max:255',
             'ticket_count' => 'nullable|integer|min:1',
         ];
@@ -118,8 +118,8 @@ class ArenaV2Controller extends Controller
         $table_number = (int)$request->table_number;
         $is_full_table = filter_var($request->is_full_table, FILTER_VALIDATE_BOOLEAN);
 
-        // Tables 1-60 = Platinum (Rows 1-6), Tables 61-130 = Gold (Rows 7-13)
-        $category = $table_number <= 60 ? 'platinum' : 'gold';
+        // Tables 1-50 = VIP / Platinum (Rows 1-5), Tables 51-130 = Gold (Rows 6-13)
+        $category = $table_number <= 50 ? 'platinum' : 'gold';
         $side = 'center';
 
         try {
@@ -681,11 +681,11 @@ class ArenaV2Controller extends Controller
             $q->where('is_temporary', false)->orWhereNull('is_temporary');
         };
 
-        // Platinum: Tables 1-60 (60 tables * 8 seats = 480 seats)
+        // VIP / Platinum: Rows 1-5, Tables 1-50 (50 tables * 8 seats = 400 seats)
         $platinumFullTables = Reservation::mapV2()->where('category', 'platinum')->where('is_full_table', true)->where($permScope)->count();
         $platinumIndividual = Reservation::mapV2()->where('category', 'platinum')->where('is_full_table', false)->where($permScope)->count();
         $platinumSold = ($platinumFullTables * 8) + $platinumIndividual;
-        $platinumCapacity = 60 * 8; // 480 seats
+        $platinumCapacity = 50 * 8; // 400 seats
 
         $platinumTempFull = Reservation::mapV2()->where('category', 'platinum')->where('is_full_table', true)->where('is_temporary', true)->count();
         $platinumTempInd = Reservation::mapV2()->where('category', 'platinum')->where('is_full_table', false)->where('is_temporary', true)->count();
@@ -695,11 +695,11 @@ class ArenaV2Controller extends Controller
         $platinumCheckInd = Reservation::mapV2()->where('category', 'platinum')->where('is_full_table', false)->where('is_checked_in', true)->where($permScope)->count();
         $platinumCheckedIn = ($platinumCheckFull * 8) + $platinumCheckInd;
 
-        // Gold: Tables 61-130 (70 tables * 8 seats = 560 seats)
+        // Gold: Rows 6-13, Tables 51-130 (80 tables * 8 seats = 640 seats)
         $goldFullTables = Reservation::mapV2()->where('category', 'gold')->where('is_full_table', true)->where($permScope)->count();
         $goldIndividual = Reservation::mapV2()->where('category', 'gold')->where('is_full_table', false)->where($permScope)->count();
         $goldSold = ($goldFullTables * 8) + $goldIndividual;
-        $goldCapacity = 70 * 8; // 560 seats
+        $goldCapacity = 80 * 8; // 640 seats
 
         $goldTempFull = Reservation::mapV2()->where('category', 'gold')->where('is_full_table', true)->where('is_temporary', true)->count();
         $goldTempInd = Reservation::mapV2()->where('category', 'gold')->where('is_full_table', false)->where('is_temporary', true)->count();

@@ -303,10 +303,10 @@
                 </div>
             </div>
 
-            <!-- Platinum Section: Rows 1 - 6 (Tables 1 - 60) -->
+            <!-- VIP Section: Rows 1 - 5 (Tables 1 - 50) -->
             <div class="category-section">
                 <div class="category-section-title platinum-section-title">
-                    ♠ PLATINUM (Tables 1 - 60 • Rows 1 - 6)
+                    ♠ VIP (Tables 1 - 50 • Rows 1 - 5)
                 </div>
                 <div class="v2-col-headers">
                     <div></div>
@@ -314,7 +314,7 @@
                         <div class="v2-axis-badge">{{ $c }}</div>
                     @endfor
                 </div>
-                @for ($r = 1; $r <= 6; $r++)
+                @for ($r = 1; $r <= 5; $r++)
                     <div class="v2-grid-row">
                         <div class="v2-axis-badge">{{ $r }}</div>
                         @for ($c = 1; $c <= 10; $c++)
@@ -327,10 +327,10 @@
                 @endfor
             </div>
 
-            <!-- Gold Section: Rows 7 - 13 (Tables 61 - 130) -->
+            <!-- Gold Section: Rows 6 - 13 (Tables 51 - 130) -->
             <div class="category-section">
                 <div class="category-section-title gold-section-title">
-                    ♥ GOLD (Tables 61 - 130 • Rows 7 - 13)
+                    ♥ GOLD (Tables 51 - 130 • Rows 6 - 13)
                 </div>
                 <div class="v2-col-headers">
                     <div></div>
@@ -338,7 +338,7 @@
                         <div class="v2-axis-badge">{{ $c }}</div>
                     @endfor
                 </div>
-                @for ($r = 7; $r <= 13; $r++)
+                @for ($r = 6; $r <= 13; $r++)
                     <div class="v2-grid-row">
                         <div class="v2-axis-badge">{{ $r }}</div>
                         @for ($c = 1; $c <= 10; $c++)

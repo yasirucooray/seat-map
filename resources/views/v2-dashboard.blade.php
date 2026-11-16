@@ -1150,7 +1150,7 @@
 
             <div class="metric-card card-platinum">
                 <div class="metric-header">
-                    <div class="metric-title">PLATINUM (TABLES 1–60)</div>
+                    <div class="metric-title">VIP (TABLES 1–50 • 5 ROWS)</div>
                     <div class="metric-suit-icon">♠</div>
                 </div>
                 <div class="metric-value" id="stats-platinum-sold">{{ $stats['platinum']['sold'] }} <span style="font-size: 1.1rem; font-weight: 500; color: var(--text-muted);">/ {{ $stats['platinum']['capacity'] }}</span></div>
@@ -1162,7 +1162,7 @@
 
             <div class="metric-card card-gold">
                 <div class="metric-header">
-                    <div class="metric-title">GOLD (TABLES 61–130)</div>
+                    <div class="metric-title">GOLD (TABLES 51–130 • 8 ROWS)</div>
                     <div class="metric-suit-icon">♥</div>
                 </div>
                 <div class="metric-value" id="stats-gold-sold">{{ $stats['gold']['sold'] }} <span style="font-size: 1.1rem; font-weight: 500; color: var(--text-muted);">/ {{ $stats['gold']['capacity'] }}</span></div>
@@ -1227,10 +1227,10 @@
             </div>
 
             <div class="v2-map-wrapper">
-                <!-- Platinum Section: Rows 1 - 6 (Tables 1 - 60, 8 Seats per Table) -->
+                <!-- VIP Section: Rows 1 - 5 (Tables 1 - 50, 8 Seats per Table) -->
                 <div class="category-section">
                     <div class="category-section-title platinum-section-title">
-                        <span>♠</span> PLATINUM (Tables 1 - 60 • Rows 1 - 6)
+                        <span>♠</span> VIP (Tables 1 - 50 • Rows 1 - 5)
                     </div>
                     <div class="v2-col-headers">
                         <div></div>
@@ -1241,10 +1241,10 @@
                     <div id="platinum-v2-rows"></div>
                 </div>
 
-                <!-- Gold Section: Rows 7 - 13 (Tables 61 - 130, 8 Seats per Table) -->
+                <!-- Gold Section: Rows 6 - 13 (Tables 51 - 130, 8 Seats per Table) -->
                 <div class="category-section">
                     <div class="category-section-title gold-section-title">
-                        <span>♥</span> GOLD (Tables 61 - 130 • Rows 7 - 13)
+                        <span>♥</span> GOLD (Tables 51 - 130 • Rows 6 - 13)
                     </div>
                     <div class="v2-col-headers">
                         <div></div>
@@ -1569,10 +1569,10 @@
         }
 
         function renderGrids() {
-            // Platinum: Rows 1 - 6 (Tables 1 - 60)
-            renderRowsSection('platinum', 1, 6, 'platinum-v2-rows');
-            // Gold: Rows 7 - 13 (Tables 61 - 130)
-            renderRowsSection('gold', 7, 13, 'gold-v2-rows');
+            // VIP: Rows 1 - 5 (Tables 1 - 50)
+            renderRowsSection('platinum', 1, 5, 'platinum-v2-rows');
+            // Gold: Rows 6 - 13 (Tables 51 - 130)
+            renderRowsSection('gold', 6, 13, 'gold-v2-rows');
 
             const leftPerm = reservationsList.filter(r => r.category === 'standing' && r.side === 'left' && !r.is_temporary).length;
             const leftTemp = reservationsList.filter(r => r.category === 'standing' && r.side === 'left' && r.is_temporary).length;
@@ -1674,7 +1674,8 @@
             const rowNum = Math.ceil(tableNumber / 10);
             const colNum = ((tableNumber - 1) % 10) + 1;
             const suitSymbol = category === 'platinum' ? '♠' : '♥';
-            document.getElementById('modal-table-title').innerText = `${suitSymbol} ${category.toUpperCase()} - Table ${tableNumber} (Row ${rowNum}, Col ${colNum})`;
+            const catDisplay = category === 'platinum' ? 'VIP' : 'GOLD';
+            document.getElementById('modal-table-title').innerText = `${suitSymbol} ${catDisplay} - Table ${tableNumber} (Row ${rowNum}, Col ${colNum})`;
             document.getElementById('modal-table-center-id').innerText = `${tableNumber}`;
 
             const bookings = reservationsList.filter(r =>
@@ -2241,11 +2242,11 @@
             const isPerm = r => !r.is_temporary;
             const isCheckedIn = r => Boolean(r.is_checked_in) && isPerm(r);
 
-            // Platinum (Tables 1-60, 8 seats per table = 480 capacity)
+            // VIP / Platinum (Rows 1-5, Tables 1-50, 8 seats per table = 400 capacity)
             const platFull = reservationsList.filter(r => r.category === 'platinum' && r.is_full_table && isPerm(r)).length;
             const platInd = reservationsList.filter(r => r.category === 'platinum' && !r.is_full_table && isPerm(r)).length;
             const platSold = (platFull * 8) + platInd;
-            const platCap = 60 * 8;
+            const platCap = 50 * 8;
             const platPct = ((platSold / platCap) * 100).toFixed(1);
 
             const platTempFull = reservationsList.filter(r => r.category === 'platinum' && r.is_full_table && isTemp(r)).length;
@@ -2256,11 +2257,11 @@
             const platCheckInd = reservationsList.filter(r => r.category === 'platinum' && !r.is_full_table && isCheckedIn(r)).length;
             const platCheckedIn = (platCheckFull * 8) + platCheckInd;
 
-            // Gold (Tables 61-130, 8 seats per table = 560 capacity)
+            // Gold (Rows 6-13, Tables 51-130, 8 seats per table = 640 capacity)
             const goldFull = reservationsList.filter(r => r.category === 'gold' && r.is_full_table && isPerm(r)).length;
             const goldInd = reservationsList.filter(r => r.category === 'gold' && !r.is_full_table && isPerm(r)).length;
             const goldSold = (goldFull * 8) + goldInd;
-            const goldCap = 70 * 8;
+            const goldCap = 80 * 8;
             const goldPct = ((goldSold / goldCap) * 100).toFixed(1);
 
             const goldTempFull = reservationsList.filter(r => r.category === 'gold' && r.is_full_table && isTemp(r)).length;
