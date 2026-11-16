@@ -1523,6 +1523,9 @@
         </div>
 
         <div class="header-actions">
+            <a href="{{ route('v2.dashboard') }}" class="btn-primary" style="width: auto; margin: 0; padding: 8px 14px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: var(--gold-gradient); color: #07050d; font-weight: 800; border-radius: 20px;">
+                🗺️ 13×10 Stage Map
+            </a>
             <a href="{{ route('scanner.index') }}" class="btn-primary" style="width: auto; margin: 0; padding: 8px 16px; font-size: 0.82rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #39ff14 0%, #10b981 100%); color: #07050d; font-weight: 800; box-shadow: 0 0 18px rgba(57, 255, 20, 0.4); border-radius: 20px;">
                 📷 QR Check-In Scanner
             </a>

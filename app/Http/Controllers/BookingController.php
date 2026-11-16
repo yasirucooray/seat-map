@@ -18,7 +18,7 @@ class BookingController extends Controller
 
     public function index()
     {
-        $reservations = Reservation::all();
+        $reservations = Reservation::mapV1()->get();
         return response()->json(['reservations' => $reservations]);
     }
 
@@ -56,6 +56,7 @@ class BookingController extends Controller
             $reservations = [];
             for ($i = 1; $i <= $ticket_count; $i++) {
                 $reservations[] = Reservation::create([
+                    'map_type' => 'v1',
                     'category' => 'standing',
                     'side' => $request->side ?? 'center',
                     'name' => $request->name,
@@ -110,7 +111,7 @@ class BookingController extends Controller
         try {
             $result = DB::transaction(function () use ($request, $category, $side, $table_number, $is_full_table, $is_temporary) {
                 // Check if table is already fully reserved or held
-                $isTableFullyReserved = Reservation::where('category', $category)
+                $isTableFullyReserved = Reservation::mapV1()->where('category', $category)
                     ->where('side', $side)
                     ->where('table_number', $table_number)
                     ->where('is_full_table', true)
@@ -124,7 +125,7 @@ class BookingController extends Controller
 
                 if ($is_full_table) {
                     // Check if any individual seats have been booked on this table
-                    $hasIndividualBookings = Reservation::where('category', $category)
+                    $hasIndividualBookings = Reservation::mapV1()->where('category', $category)
                         ->where('side', $side)
                         ->where('table_number', $table_number)
                         ->lockForUpdate()
@@ -140,6 +141,7 @@ class BookingController extends Controller
                     }
 
                     $reservation = Reservation::create([
+                        'map_type' => 'v1',
                         'category' => $category,
                         'side' => $side,
                         'table_number' => $table_number,
@@ -156,7 +158,7 @@ class BookingController extends Controller
                     $seat_numbers = $this->resolveSeatNumbers($request);
 
                     // Check if any of the requested seats are already booked
-                    $alreadyBooked = Reservation::where('category', $category)
+                    $alreadyBooked = Reservation::mapV1()->where('category', $category)
                         ->where('side', $side)
                         ->where('table_number', $table_number)
                         ->whereIn('seat_number', $seat_numbers)
@@ -178,6 +180,7 @@ class BookingController extends Controller
                         }
 
                         $reservations[] = Reservation::create([
+                            'map_type' => 'v1',
                             'category' => $category,
                             'side' => $side,
                             'table_number' => $table_number,

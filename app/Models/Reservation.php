@@ -10,6 +10,7 @@ class Reservation extends Model
     use HasFactory;
 
     protected $fillable = [
+        'map_type',
         'category',
         'side',
         'table_number',
@@ -31,6 +32,18 @@ class Reservation extends Model
         'table_number' => 'integer',
         'seat_number' => 'integer',
     ];
+
+    public function scopeMapV1($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('map_type', 'v1')->orWhereNull('map_type');
+        });
+    }
+
+    public function scopeMapV2($query)
+    {
+        return $query->where('map_type', 'v2');
+    }
 
     public function scopePermanent($query)
     {

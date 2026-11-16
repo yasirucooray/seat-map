@@ -41,6 +41,11 @@ class CustomerSeatController extends Controller
 
             if ($customerBookings->isNotEmpty()) {
                 $first = $customerBookings->first();
+
+                if (($first->map_type ?? 'v1') === 'v2') {
+                    return app(\App\Http\Controllers\ArenaV2Controller::class)->customerSeat($request, $ticketQuery);
+                }
+
                 $seats = $customerBookings->pluck('seat_number')->filter()->map(fn($s) => (int)$s)->values()->all();
                 sort($seats);
 

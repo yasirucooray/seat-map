@@ -14,41 +14,41 @@ class DashboardController extends Controller
         };
 
         // Platinum calculations (54 tables each side, 8 seats per table)
-        $platinumFullTables = Reservation::where('category', 'platinum')->where('is_full_table', true)->where($permScope)->count();
-        $platinumIndividual = Reservation::where('category', 'platinum')->where('is_full_table', false)->where($permScope)->count();
+        $platinumFullTables = Reservation::mapV1()->where('category', 'platinum')->where('is_full_table', true)->where($permScope)->count();
+        $platinumIndividual = Reservation::mapV1()->where('category', 'platinum')->where('is_full_table', false)->where($permScope)->count();
         $platinumSold = ($platinumFullTables * 8) + $platinumIndividual;
         $platinumCapacity = 108 * 8; // 108 tables total * 8 seats
 
         // Platinum Temporary calculations
-        $platinumTempFullTables = Reservation::where('category', 'platinum')->where('is_full_table', true)->where('is_temporary', true)->count();
-        $platinumTempIndividual = Reservation::where('category', 'platinum')->where('is_full_table', false)->where('is_temporary', true)->count();
+        $platinumTempFullTables = Reservation::mapV1()->where('category', 'platinum')->where('is_full_table', true)->where('is_temporary', true)->count();
+        $platinumTempIndividual = Reservation::mapV1()->where('category', 'platinum')->where('is_full_table', false)->where('is_temporary', true)->count();
         $platinumTemp = ($platinumTempFullTables * 8) + $platinumTempIndividual;
 
         // Platinum Checked-In
-        $platinumCheckedInFull = Reservation::where('category', 'platinum')->where('is_full_table', true)->where('is_checked_in', true)->where($permScope)->count();
-        $platinumCheckedInInd = Reservation::where('category', 'platinum')->where('is_full_table', false)->where('is_checked_in', true)->where($permScope)->count();
+        $platinumCheckedInFull = Reservation::mapV1()->where('category', 'platinum')->where('is_full_table', true)->where('is_checked_in', true)->where($permScope)->count();
+        $platinumCheckedInInd = Reservation::mapV1()->where('category', 'platinum')->where('is_full_table', false)->where('is_checked_in', true)->where($permScope)->count();
         $platinumCheckedIn = ($platinumCheckedInFull * 8) + $platinumCheckedInInd;
 
         // Gold calculations (72 tables each side, 8 seats per table)
-        $goldFullTables = Reservation::where('category', 'gold')->where('is_full_table', true)->where($permScope)->count();
-        $goldIndividual = Reservation::where('category', 'gold')->where('is_full_table', false)->where($permScope)->count();
+        $goldFullTables = Reservation::mapV1()->where('category', 'gold')->where('is_full_table', true)->where($permScope)->count();
+        $goldIndividual = Reservation::mapV1()->where('category', 'gold')->where('is_full_table', false)->where($permScope)->count();
         $goldSold = ($goldFullTables * 8) + $goldIndividual;
         $goldCapacity = 144 * 8; // 144 tables total * 8 seats
 
         // Gold Temporary calculations
-        $goldTempFullTables = Reservation::where('category', 'gold')->where('is_full_table', true)->where('is_temporary', true)->count();
-        $goldTempIndividual = Reservation::where('category', 'gold')->where('is_full_table', false)->where('is_temporary', true)->count();
+        $goldTempFullTables = Reservation::mapV1()->where('category', 'gold')->where('is_full_table', true)->where('is_temporary', true)->count();
+        $goldTempIndividual = Reservation::mapV1()->where('category', 'gold')->where('is_full_table', false)->where('is_temporary', true)->count();
         $goldTemp = ($goldTempFullTables * 8) + $goldTempIndividual;
 
         // Gold Checked-In
-        $goldCheckedInFull = Reservation::where('category', 'gold')->where('is_full_table', true)->where('is_checked_in', true)->where($permScope)->count();
-        $goldCheckedInInd = Reservation::where('category', 'gold')->where('is_full_table', false)->where('is_checked_in', true)->where($permScope)->count();
+        $goldCheckedInFull = Reservation::mapV1()->where('category', 'gold')->where('is_full_table', true)->where('is_checked_in', true)->where($permScope)->count();
+        $goldCheckedInInd = Reservation::mapV1()->where('category', 'gold')->where('is_full_table', false)->where('is_checked_in', true)->where($permScope)->count();
         $goldCheckedIn = ($goldCheckedInFull * 8) + $goldCheckedInInd;
 
         // Standing calculations
-        $standingSold = Reservation::where('category', 'standing')->where($permScope)->count();
-        $standingTemp = Reservation::where('category', 'standing')->where('is_temporary', true)->count();
-        $standingCheckedIn = Reservation::where('category', 'standing')->where('is_checked_in', true)->where($permScope)->count();
+        $standingSold = Reservation::mapV1()->where('category', 'standing')->where($permScope)->count();
+        $standingTemp = Reservation::mapV1()->where('category', 'standing')->where('is_temporary', true)->count();
+        $standingCheckedIn = Reservation::mapV1()->where('category', 'standing')->where('is_checked_in', true)->where($permScope)->count();
 
         // Total calculations
         $totalSold = $platinumSold + $goldSold + $standingSold; // Permanent Confirmed
@@ -61,7 +61,7 @@ class DashboardController extends Controller
         $totalSeatedPercentage = $totalSeatedCapacity > 0 ? round(($totalSeatedSold / $totalSeatedCapacity) * 100, 1) : 0;
 
         // Recent bookings (latest 15)
-        $recentBookings = Reservation::orderBy('id', 'desc')->take(15)->get();
+        $recentBookings = Reservation::mapV1()->orderBy('id', 'desc')->take(15)->get();
 
         return view('dashboard', [
             'stats' => [

@@ -72,13 +72,23 @@ class GoogleSheetsService
         try {
             $values = [];
             foreach ($reservations as $reservation) {
-                $seatDetail = $reservation->category === 'standing' ? 'Standing' : ($reservation->is_full_table ? 'Full Table' : "Seat {$reservation->seat_number}");
-                $tableNumber = $reservation->table_number ? strtoupper(substr($reservation->side, 0, 1)).$reservation->table_number : 'N/A';
+                $isV2 = ($reservation->map_type ?? 'v1') === 'v2';
+                if ($isV2) {
+                    $seatDetail = $reservation->category === 'standing'
+                        ? 'Standing'
+                        : ($reservation->is_full_table ? 'Full Table' : "Seat {$reservation->seat_number}");
+                    $tableNumber = $reservation->table_number ? "Table {$reservation->table_number}" : 'N/A';
+                    $sideLabel = $reservation->category === 'standing' ? ucfirst($reservation->side ?? 'Left') : 'Stage Map (v2)';
+                } else {
+                    $seatDetail = $reservation->category === 'standing' ? 'Standing' : ($reservation->is_full_table ? 'Full Table' : "Seat {$reservation->seat_number}");
+                    $tableNumber = $reservation->table_number ? strtoupper(substr($reservation->side, 0, 1)).$reservation->table_number : 'N/A';
+                    $sideLabel = ucfirst($reservation->side ?? 'Center');
+                }
 
                 $values[] = [
                     now()->toDateTimeString(),
                     ucfirst($reservation->category),
-                    ucfirst($reservation->side ?? 'Center'),
+                    $sideLabel,
                     $tableNumber,
                     $seatDetail,
                     $reservation->name,
@@ -283,15 +293,25 @@ class GoogleSheetsService
             }
 
             if ($rowIndex !== -1) {
-                $seatDetail = $reservation->category === 'standing' ? 'Standing' : ($reservation->is_full_table ? 'Full Table' : "Seat {$reservation->seat_number}");
-                $tableNumber = $reservation->table_number ? strtoupper(substr($reservation->side, 0, 1)).$reservation->table_number : 'N/A';
+                $isV2 = ($reservation->map_type ?? 'v1') === 'v2';
+                if ($isV2) {
+                    $seatDetail = $reservation->category === 'standing'
+                        ? 'Standing'
+                        : ($reservation->is_full_table ? 'Full Table' : "Seat {$reservation->seat_number}");
+                    $tableNumber = $reservation->table_number ? "Table {$reservation->table_number}" : 'N/A';
+                    $sideLabel = $reservation->category === 'standing' ? ucfirst($reservation->side ?? 'Left') : 'Stage Map (v2)';
+                } else {
+                    $seatDetail = $reservation->category === 'standing' ? 'Standing' : ($reservation->is_full_table ? 'Full Table' : "Seat {$reservation->seat_number}");
+                    $tableNumber = $reservation->table_number ? strtoupper(substr($reservation->side, 0, 1)).$reservation->table_number : 'N/A';
+                    $sideLabel = ucfirst($reservation->side ?? 'Center');
+                }
                 $rowNumber = $rowIndex + 1; // 1-based row index in sheet
 
                 $updateValues = [
                     [
                         now()->toDateTimeString(),
                         ucfirst($reservation->category),
-                        ucfirst($reservation->side ?? 'Center'),
+                        $sideLabel,
                         $tableNumber,
                         $seatDetail,
                         $reservation->name,

@@ -48,7 +48,7 @@ class CheckInController extends Controller
 
         // 1. Exact or case-insensitive match against ticket_number
         foreach ($candidates as $candidate) {
-            $found = Reservation::whereRaw('LOWER(TRIM(ticket_number)) = ?', [strtolower(trim($candidate))])
+            $found = Reservation::mapV1()->whereRaw('LOWER(TRIM(ticket_number)) = ?', [strtolower(trim($candidate))])
                 ->orderBy('seat_number', 'asc')
                 ->orderBy('id', 'asc')
                 ->get();
@@ -64,7 +64,7 @@ class CheckInController extends Controller
         if ($reservations->isEmpty()) {
             foreach ($candidates as $candidate) {
                 if (strlen($candidate) >= 5) {
-                    $found = Reservation::whereRaw('LOWER(ticket_number) LIKE ?', ['%' . strtolower(trim($candidate)) . '%'])
+                    $found = Reservation::mapV1()->whereRaw('LOWER(ticket_number) LIKE ?', ['%' . strtolower(trim($candidate)) . '%'])
                         ->orderBy('seat_number', 'asc')
                         ->orderBy('id', 'asc')
                         ->get();
@@ -346,27 +346,27 @@ class CheckInController extends Controller
         };
 
         // Total Permanent Sold
-        $platFullSold = Reservation::where('category', 'platinum')->where('is_full_table', true)->where($permScope)->count();
-        $platIndSold = Reservation::where('category', 'platinum')->where('is_full_table', false)->where($permScope)->count();
+        $platFullSold = Reservation::mapV1()->where('category', 'platinum')->where('is_full_table', true)->where($permScope)->count();
+        $platIndSold = Reservation::mapV1()->where('category', 'platinum')->where('is_full_table', false)->where($permScope)->count();
         $platSold = ($platFullSold * 8) + $platIndSold;
 
-        $goldFullSold = Reservation::where('category', 'gold')->where('is_full_table', true)->where($permScope)->count();
-        $goldIndSold = Reservation::where('category', 'gold')->where('is_full_table', false)->where($permScope)->count();
+        $goldFullSold = Reservation::mapV1()->where('category', 'gold')->where('is_full_table', true)->where($permScope)->count();
+        $goldIndSold = Reservation::mapV1()->where('category', 'gold')->where('is_full_table', false)->where($permScope)->count();
         $goldSold = ($goldFullSold * 8) + $goldIndSold;
 
-        $standingSold = Reservation::where('category', 'standing')->where($permScope)->count();
+        $standingSold = Reservation::mapV1()->where('category', 'standing')->where($permScope)->count();
         $totalSold = $platSold + $goldSold + $standingSold;
 
         // Checked-In Counts
-        $platFullIn = Reservation::where('category', 'platinum')->where('is_full_table', true)->where('is_checked_in', true)->where($permScope)->count();
-        $platIndIn = Reservation::where('category', 'platinum')->where('is_full_table', false)->where('is_checked_in', true)->where($permScope)->count();
+        $platFullIn = Reservation::mapV1()->where('category', 'platinum')->where('is_full_table', true)->where('is_checked_in', true)->where($permScope)->count();
+        $platIndIn = Reservation::mapV1()->where('category', 'platinum')->where('is_full_table', false)->where('is_checked_in', true)->where($permScope)->count();
         $platCheckedIn = ($platFullIn * 8) + $platIndIn;
 
-        $goldFullIn = Reservation::where('category', 'gold')->where('is_full_table', true)->where('is_checked_in', true)->where($permScope)->count();
-        $goldIndIn = Reservation::where('category', 'gold')->where('is_full_table', false)->where('is_checked_in', true)->where($permScope)->count();
+        $goldFullIn = Reservation::mapV1()->where('category', 'gold')->where('is_full_table', true)->where('is_checked_in', true)->where($permScope)->count();
+        $goldIndIn = Reservation::mapV1()->where('category', 'gold')->where('is_full_table', false)->where('is_checked_in', true)->where($permScope)->count();
         $goldCheckedIn = ($goldFullIn * 8) + $goldIndIn;
 
-        $standingCheckedIn = Reservation::where('category', 'standing')->where('is_checked_in', true)->where($permScope)->count();
+        $standingCheckedIn = Reservation::mapV1()->where('category', 'standing')->where('is_checked_in', true)->where($permScope)->count();
 
         $totalCheckedIn = $platCheckedIn + $goldCheckedIn + $standingCheckedIn;
         $totalRemaining = max(0, $totalSold - $totalCheckedIn);
