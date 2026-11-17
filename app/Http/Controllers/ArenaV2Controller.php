@@ -849,12 +849,12 @@ class ArenaV2Controller extends Controller
             ->select(['name', 'ticket_number', 'category', 'side', 'table_number', 'seat_number', 'is_full_table'])
             ->get();
 
-        // Map V2 ticket_numbers and guest names to their V2 locations so we can accurately check if already placed on V2
+        // Map V2 ticket_numbers strictly to their V2 locations (do NOT match by guest name,
+        // so multiple bookings for the same customer name remain visible until their specific order is assigned)
         $v2ByTicket = [];
-        $v2ByName = [];
         foreach ($v2List as $v2) {
             $key = strtolower(trim((string)$v2->ticket_number));
-            $nameKey = strtolower(trim((string)$v2->name));
+            if ($key === '') continue;
 
             $loc = '';
             if ($v2->category === 'standing') {
@@ -865,18 +865,10 @@ class ArenaV2Controller extends Controller
                 $loc = "Table {$v2->table_number} Seat {$v2->seat_number}";
             }
 
-            if ($key !== '') {
-                if (!isset($v2ByTicket[$key])) {
-                    $v2ByTicket[$key] = [];
-                }
-                $v2ByTicket[$key][] = $loc;
+            if (!isset($v2ByTicket[$key])) {
+                $v2ByTicket[$key] = [];
             }
-            if ($nameKey !== '') {
-                if (!isset($v2ByName[$nameKey])) {
-                    $v2ByName[$nameKey] = [];
-                }
-                $v2ByName[$nameKey][] = $loc;
-            }
+            $v2ByTicket[$key][] = $loc;
         }
 
         // Group V1 bookings by Order/Ticket + Table so multi-seat orders can be placed in one action
@@ -888,13 +880,10 @@ class ArenaV2Controller extends Controller
                     ? ucfirst($b->side ?? 'Center') . ' Standing'
                     : 'Table ' . strtoupper(substr($b->side ?? 'L', 0, 1)) . $b->table_number;
 
-                $tKey = strtolower(trim((string)$b->ticket_number));
-                $nKey = strtolower(trim((string)$b->name));
+                $tKey = strtolower(trim((string)($b->ticket_number ?: ('V1-ID-' . $b->id))));
                 $v2Locations = [];
                 if ($tKey !== '' && isset($v2ByTicket[$tKey])) {
                     $v2Locations = $v2ByTicket[$tKey];
-                } elseif ($nKey !== '' && isset($v2ByName[$nKey])) {
-                    $v2Locations = $v2ByName[$nKey];
                 }
                 $v2Locations = array_values(array_unique($v2Locations));
 
@@ -920,14 +909,10 @@ class ArenaV2Controller extends Controller
             } else {
                 // If any subsequent seat in the group matches a V2 location, mark as placed
                 if (!$groups[$groupKey]['already_on_v2']) {
-                    $tKey = strtolower(trim((string)$b->ticket_number));
-                    $nKey = strtolower(trim((string)$b->name));
+                    $tKey = strtolower(trim((string)($b->ticket_number ?: ('V1-ID-' . $b->id))));
                     if ($tKey !== '' && isset($v2ByTicket[$tKey])) {
                         $groups[$groupKey]['already_on_v2'] = true;
                         $groups[$groupKey]['v2_locations'] = array_values(array_unique(array_merge($groups[$groupKey]['v2_locations'], $v2ByTicket[$tKey])));
-                    } elseif ($nKey !== '' && isset($v2ByName[$nKey])) {
-                        $groups[$groupKey]['already_on_v2'] = true;
-                        $groups[$groupKey]['v2_locations'] = array_values(array_unique(array_merge($groups[$groupKey]['v2_locations'], $v2ByName[$nKey])));
                     }
                 }
             }
@@ -993,7 +978,7 @@ class ArenaV2Controller extends Controller
                     'side' => $side,
                     'name' => $rec->name,
                     'email' => $rec->email,
-                    'ticket_number' => $rec->ticket_number,
+                    'ticket_number' => $rec->ticket_number ?: ('V1-ID-' . $rec->id),
                     'is_full_table' => false,
                     'is_temporary' => (bool)$rec->is_temporary,
                     'is_checked_in' => (bool)$rec->is_checked_in,
@@ -1058,7 +1043,7 @@ class ArenaV2Controller extends Controller
                         'checked_in_at' => $first->checked_in_at,
                         'name' => $first->name,
                         'email' => $first->email,
-                        'ticket_number' => $first->ticket_number,
+                        'ticket_number' => $first->ticket_number ?: ('V1-ID-' . $first->id),
                     ]);
 
                     return [$newRes];
@@ -1117,7 +1102,7 @@ class ArenaV2Controller extends Controller
                         'checked_in_at' => $src->checked_in_at,
                         'name' => $src->name,
                         'email' => $src->email,
-                        'ticket_number' => $src->ticket_number,
+                        'ticket_number' => $src->ticket_number ?: ('V1-ID-' . $src->id),
                     ]);
                 }
 
