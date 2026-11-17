@@ -843,7 +843,7 @@ class ArenaV2Controller extends Controller
 
         $v1List = Reservation::mapV1()
             ->select(['id', 'name', 'email', 'ticket_number', 'category', 'side', 'table_number', 'seat_number', 'is_full_table', 'is_temporary', 'is_checked_in'])
-            ->orderBy('id', 'desc')
+            ->orderBy('id', 'asc')
             ->get();
         $v2List = Reservation::mapV2()
             ->select(['name', 'ticket_number', 'category', 'side', 'table_number', 'seat_number', 'is_full_table'])

@@ -393,28 +393,29 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 12px;
-            max-height: 340px;
+            max-height: 380px;
             overflow-y: auto;
             padding-right: 6px;
             margin-top: 14px;
+            contain: content;
         }
         .v1-booking-card {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(18, 14, 28, 0.85);
             border: 1px solid rgba(212, 175, 55, 0.28);
             border-radius: 12px;
             padding: 12px 14px;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            transition: all 0.2s ease;
+            contain: layout style;
         }
         .v1-booking-card:hover {
             border-color: var(--gold-primary);
-            background: rgba(212, 175, 55, 0.06);
+            background: rgba(28, 22, 42, 0.95);
         }
         .v1-booking-card.already-placed {
             border-color: rgba(57, 255, 20, 0.35);
-            background: rgba(16, 185, 129, 0.06);
+            background: rgba(16, 185, 129, 0.08);
         }
 
         .stage-container {
@@ -1486,7 +1487,11 @@
                         </p>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <input type="text" id="v1-filter-input" class="seat-search-input" style="width: 210px; padding: 8px 14px;" placeholder="Filter V1 name, order, L12..." onkeydown="if(event.key==='Enter'){event.preventDefault();renderV1ImportList();}">
+                        <input type="text" id="v1-filter-input" class="seat-search-input" style="width: 200px; padding: 8px 14px;" placeholder="Filter V1 name, order, L12..." oninput="debouncedRenderV1()" onkeydown="if(event.key==='Enter'){event.preventDefault();renderV1ImportList();}">
+                        <select id="v1-sort-order" class="seat-search-input" style="width: auto; padding: 8px 12px; font-size: 0.78rem;" onchange="renderV1ImportList()">
+                            <option value="oldest" selected>⏳ Oldest First (Top)</option>
+                            <option value="newest">⚡ Newest First</option>
+                        </select>
                         <button type="button" class="btn-primary" style="width: auto; padding: 8px 14px; font-size: 0.78rem; border-radius: 18px;" onclick="renderV1ImportList()">🔍 Search</button>
                         <label style="font-size: 0.8rem; color: #cbd5e1; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
                             <input type="checkbox" id="v1-show-placed" onchange="renderV1ImportList()">
@@ -1981,6 +1986,12 @@
         }
 
         let v1DisplayLimit = 30;
+        let v1SearchTimer = null;
+
+        function debouncedRenderV1() {
+            clearTimeout(v1SearchTimer);
+            v1SearchTimer = setTimeout(renderV1ImportList, 120);
+        }
 
         function renderV1ImportList() {
             const grid = document.getElementById('v1-cards-grid');
@@ -1988,6 +1999,7 @@
 
             const q = (document.getElementById('v1-filter-input')?.value || '').trim().toLowerCase();
             const showPlaced = Boolean(document.getElementById('v1-show-placed')?.checked);
+            const sortOrder = document.getElementById('v1-sort-order')?.value || 'oldest';
 
             const filtered = baseGroupsList.filter(g => {
                 // If table/booking already added to V2, DO NOT show it in the assign section
@@ -1999,6 +2011,13 @@
                        (g.category && g.category.toLowerCase().includes(q));
             });
 
+            // Sort so the oldest bookings appear at the very top of the list
+            if (sortOrder === 'oldest') {
+                filtered.sort((a, b) => a.primary_id - b.primary_id);
+            } else {
+                filtered.sort((a, b) => b.primary_id - a.primary_id);
+            }
+
             if (filtered.length === 0) {
                 const emptyMsg = (!showPlaced && baseGroupsList.some(g => g.already_on_v2))
                     ? '🎉 All Base Map (V1) bookings have been assigned to the V2 map! (Check "Show already placed on V2" to view them).'
@@ -2008,13 +2027,10 @@
             }
 
             const toShow = filtered.slice(0, v1DisplayLimit);
-            grid.innerHTML = '';
-            const fragment = document.createDocumentFragment();
+            let html = '';
 
-            toShow.forEach(g => {
-                const card = document.createElement('div');
-                card.className = 'v1-booking-card' + (g.already_on_v2 ? ' already-placed' : '');
-
+            for (let i = 0; i < toShow.length; i++) {
+                const g = toShow[i];
                 const seatDesc = g.category === 'standing'
                     ? `${g.seat_count} Standing Ticket(s)`
                     : (g.is_full_table ? 'Full Table (8 Seats)' : `Seat(s): ${g.seats.join(', ')} (${g.seat_count})`);
@@ -2041,33 +2057,34 @@
                     `;
                 }
 
-                card.innerHTML = `
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-                        <div>
-                            <div style="font-weight:800;color:#fff;font-size:0.92rem;">${escapeModalHtml(g.name)}</div>
-                            <div style="font-size:0.75rem;color:var(--gold-primary);font-family:monospace;">${g.is_temporary ? '⏳ TEMP HOLD' : escapeModalHtml(g.ticket_number)}</div>
+                html += `
+                    <div class="v1-booking-card ${g.already_on_v2 ? 'already-placed' : ''}">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                            <div>
+                                <div style="font-weight:800;color:#fff;font-size:0.92rem;">${escapeModalHtml(g.name)}</div>
+                                <div style="font-size:0.75rem;color:var(--gold-primary);font-family:monospace;">${g.is_temporary ? '⏳ TEMP HOLD' : escapeModalHtml(g.ticket_number)}</div>
+                            </div>
+                            ${placedBadge}
                         </div>
-                        ${placedBadge}
+                        <div style="font-size:0.78rem;color:#cbd5e1;">
+                            <span class="category-badge badge-${g.category}" style="padding:2px 6px;font-size:0.68rem;margin-right:4px;">${g.category}</span>
+                            <strong>V1:</strong> ${escapeModalHtml(g.v1_location)} • ${escapeModalHtml(seatDesc)}
+                        </div>
+                        ${actionControls}
                     </div>
-                    <div style="font-size:0.78rem;color:#cbd5e1;">
-                        <span class="category-badge badge-${g.category}" style="padding:2px 6px;font-size:0.68rem;margin-right:4px;">${g.category}</span>
-                        <strong>V1:</strong> ${escapeModalHtml(g.v1_location)} • ${escapeModalHtml(seatDesc)}
-                    </div>
-                    ${actionControls}
                 `;
-                fragment.appendChild(card);
-            });
-
-            grid.appendChild(fragment);
+            }
 
             if (filtered.length > v1DisplayLimit) {
-                const moreBtn = document.createElement('div');
-                moreBtn.style.gridColumn = '1 / -1';
-                moreBtn.style.textAlign = 'center';
-                moreBtn.style.padding = '10px';
-                moreBtn.innerHTML = `<button type="button" class="btn-primary" style="width:auto;padding:8px 20px;border-radius:20px;" onclick="v1DisplayLimit += 30; renderV1ImportList();">Load More (${filtered.length - v1DisplayLimit} remaining)</button>`;
-                grid.appendChild(moreBtn);
+                html += `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 10px;">
+                        <button type="button" class="btn-primary" style="width:auto;padding:8px 20px;border-radius:20px;" onclick="v1DisplayLimit += 30; renderV1ImportList();">Load More (${filtered.length - v1DisplayLimit} remaining)</button>
+                    </div>
+                `;
             }
+
+            grid.innerHTML = html;
+        }
         }
 
         async function importStandingV1ById(primaryId, side) {
