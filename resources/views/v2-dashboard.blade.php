@@ -2085,7 +2085,6 @@
 
             grid.innerHTML = html;
         }
-        }
 
         async function importStandingV1ById(primaryId, side) {
             const groupObj = baseGroupsList.find(g => g.primary_id === primaryId);
