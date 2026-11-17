@@ -846,23 +846,36 @@ class ArenaV2Controller extends Controller
             ->orderBy('id', 'desc')
             ->get();
         $v2List = Reservation::mapV2()
-            ->select(['ticket_number', 'category', 'side', 'table_number', 'seat_number', 'is_full_table'])
+            ->select(['name', 'ticket_number', 'category', 'side', 'table_number', 'seat_number', 'is_full_table'])
             ->get();
 
-        // Map V2 ticket_numbers to their V2 locations so we can show if a V1 booking is already placed on V2
+        // Map V2 ticket_numbers and guest names to their V2 locations so we can accurately check if already placed on V2
         $v2ByTicket = [];
+        $v2ByName = [];
         foreach ($v2List as $v2) {
             $key = strtolower(trim((string)$v2->ticket_number));
-            if ($key === '') continue;
-            if (!isset($v2ByTicket[$key])) {
-                $v2ByTicket[$key] = [];
-            }
+            $nameKey = strtolower(trim((string)$v2->name));
+
+            $loc = '';
             if ($v2->category === 'standing') {
-                $v2ByTicket[$key][] = strtoupper($v2->side ?? 'LEFT') . ' Standing';
+                $loc = strtoupper($v2->side ?? 'LEFT') . ' Standing';
             } elseif ($v2->is_full_table) {
-                $v2ByTicket[$key][] = "Table {$v2->table_number} (Full)";
+                $loc = "Table {$v2->table_number} (Full Table)";
             } else {
-                $v2ByTicket[$key][] = "Table {$v2->table_number} Seat {$v2->seat_number}";
+                $loc = "Table {$v2->table_number} Seat {$v2->seat_number}";
+            }
+
+            if ($key !== '') {
+                if (!isset($v2ByTicket[$key])) {
+                    $v2ByTicket[$key] = [];
+                }
+                $v2ByTicket[$key][] = $loc;
+            }
+            if ($nameKey !== '') {
+                if (!isset($v2ByName[$nameKey])) {
+                    $v2ByName[$nameKey] = [];
+                }
+                $v2ByName[$nameKey][] = $loc;
             }
         }
 
@@ -876,9 +889,14 @@ class ArenaV2Controller extends Controller
                     : 'Table ' . strtoupper(substr($b->side ?? 'L', 0, 1)) . $b->table_number;
 
                 $tKey = strtolower(trim((string)$b->ticket_number));
-                $v2Locations = ($tKey !== '' && isset($v2ByTicket[$tKey]))
-                    ? array_values(array_unique($v2ByTicket[$tKey]))
-                    : [];
+                $nKey = strtolower(trim((string)$b->name));
+                $v2Locations = [];
+                if ($tKey !== '' && isset($v2ByTicket[$tKey])) {
+                    $v2Locations = $v2ByTicket[$tKey];
+                } elseif ($nKey !== '' && isset($v2ByName[$nKey])) {
+                    $v2Locations = $v2ByName[$nKey];
+                }
+                $v2Locations = array_values(array_unique($v2Locations));
 
                 $groups[$groupKey] = [
                     'group_key' => $groupKey,
@@ -899,6 +917,19 @@ class ArenaV2Controller extends Controller
                     'already_on_v2' => count($v2Locations) > 0,
                     'v2_locations' => $v2Locations,
                 ];
+            } else {
+                // If any subsequent seat in the group matches a V2 location, mark as placed
+                if (!$groups[$groupKey]['already_on_v2']) {
+                    $tKey = strtolower(trim((string)$b->ticket_number));
+                    $nKey = strtolower(trim((string)$b->name));
+                    if ($tKey !== '' && isset($v2ByTicket[$tKey])) {
+                        $groups[$groupKey]['already_on_v2'] = true;
+                        $groups[$groupKey]['v2_locations'] = array_values(array_unique(array_merge($groups[$groupKey]['v2_locations'], $v2ByTicket[$tKey])));
+                    } elseif ($nKey !== '' && isset($v2ByName[$nKey])) {
+                        $groups[$groupKey]['already_on_v2'] = true;
+                        $groups[$groupKey]['v2_locations'] = array_values(array_unique(array_merge($groups[$groupKey]['v2_locations'], $v2ByName[$nKey])));
+                    }
+                }
             }
 
             $groups[$groupKey]['ids'][] = $b->id;

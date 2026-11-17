@@ -1489,8 +1489,8 @@
                         <input type="text" id="v1-filter-input" class="seat-search-input" style="width: 210px; padding: 8px 14px;" placeholder="Filter V1 name, order, L12..." onkeydown="if(event.key==='Enter'){event.preventDefault();renderV1ImportList();}">
                         <button type="button" class="btn-primary" style="width: auto; padding: 8px 14px; font-size: 0.78rem; border-radius: 18px;" onclick="renderV1ImportList()">🔍 Search</button>
                         <label style="font-size: 0.8rem; color: #cbd5e1; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-                            <input type="checkbox" id="v1-hide-placed" onchange="renderV1ImportList()">
-                            Hide already placed on V2
+                            <input type="checkbox" id="v1-show-placed" onchange="renderV1ImportList()">
+                            Show already placed on V2
                         </label>
                         <button type="button" class="logout-btn" style="padding: 6px 12px;" onclick="toggleV1ImportDrawer()">Close</button>
                     </div>
@@ -1987,10 +1987,11 @@
             if (!grid) return;
 
             const q = (document.getElementById('v1-filter-input')?.value || '').trim().toLowerCase();
-            const hidePlaced = Boolean(document.getElementById('v1-hide-placed')?.checked);
+            const showPlaced = Boolean(document.getElementById('v1-show-placed')?.checked);
 
             const filtered = baseGroupsList.filter(g => {
-                if (hidePlaced && g.already_on_v2) return false;
+                // If table/booking already added to V2, DO NOT show it in the assign section
+                if (!showPlaced && g.already_on_v2) return false;
                 if (!q) return true;
                 return (g.name && g.name.toLowerCase().includes(q)) ||
                        (g.ticket_number && g.ticket_number.toLowerCase().includes(q)) ||
@@ -1999,7 +2000,10 @@
             });
 
             if (filtered.length === 0) {
-                grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 18px; color: var(--text-muted);">No matching Base Map (V1) bookings found.</div>`;
+                const emptyMsg = (!showPlaced && baseGroupsList.some(g => g.already_on_v2))
+                    ? '🎉 All Base Map (V1) bookings have been assigned to the V2 map! (Check "Show already placed on V2" to view them).'
+                    : 'No matching Base Map (V1) bookings found.';
+                grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 18px; color: var(--text-muted);">${escapeModalHtml(emptyMsg)}</div>`;
                 return;
             }
 
