@@ -16,7 +16,7 @@ Route::get('/v2/seat/{ticket?}', [ArenaV2Controller::class, 'customerSeat'])->na
 Route::get('/v2/find-seat/{ticket?}', [ArenaV2Controller::class, 'customerSeat']);
 
 Route::get('/', function () {
-    return redirect()->route('dashboard');
+    return redirect()->route('v2.dashboard');
 });
 
 Route::middleware('guest')->group(function () {
@@ -56,4 +56,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/v2/bookings', [ArenaV2Controller::class, 'bookingsStore'])->name('v2.bookings.store');
     Route::put('/api/v2/bookings/{id}', [ArenaV2Controller::class, 'bookingsUpdate'])->name('v2.bookings.update');
     Route::delete('/api/v2/bookings/{id}', [ArenaV2Controller::class, 'bookingsDestroy'])->name('v2.bookings.destroy');
+
+    // Editor-Only: Import Base Map (V1) Bookings to V2 & Move/Reallocate V2 Seats
+    Route::get('/api/v2/base-bookings', [ArenaV2Controller::class, 'baseBookings'])->name('v2.base.bookings');
+    Route::post('/api/v2/import-from-base', [ArenaV2Controller::class, 'importFromBase'])->name('v2.import.base');
+    Route::post('/api/v2/move-allocation', [ArenaV2Controller::class, 'moveAllocation'])->name('v2.move.allocation');
 });

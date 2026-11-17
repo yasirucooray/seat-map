@@ -26,10 +26,12 @@ class ArenaV2Controller extends Controller
     {
         $stats = $this->calculateStats();
         $recentBookings = Reservation::mapV2()->orderBy('id', 'desc')->take(15)->get();
+        $isEditor = auth()->check() && method_exists(auth()->user(), 'isEditor') && auth()->user()->isEditor();
 
         return view('v2-dashboard', [
             'stats' => $stats,
             'recentBookings' => $recentBookings,
+            'isEditor' => $isEditor,
         ]);
     }
 
@@ -825,6 +827,434 @@ class ArenaV2Controller extends Controller
             'ticket_code' => $ticketCode ? trim((string)$ticketCode) : null,
             'raw_clean' => $rawClean,
         ];
+    }
+
+    /**
+     * Editor-Only: List Base Map (V1) bookings so the admin can easily import/assign them to the V2 map.
+     */
+    public function baseBookings()
+    {
+        $v1List = Reservation::mapV1()->orderBy('id', 'desc')->get();
+        $v2List = Reservation::mapV2()->get();
+
+        // Map V2 ticket_numbers to their V2 locations so we can show if a V1 booking is already placed on V2
+        $v2ByTicket = [];
+        foreach ($v2List as $v2) {
+            $key = strtolower(trim((string)$v2->ticket_number));
+            if ($key === '') continue;
+            if (!isset($v2ByTicket[$key])) {
+                $v2ByTicket[$key] = [];
+            }
+            if ($v2->category === 'standing') {
+                $v2ByTicket[$key][] = strtoupper($v2->side ?? 'LEFT') . ' Standing';
+            } elseif ($v2->is_full_table) {
+                $v2ByTicket[$key][] = "Table {$v2->table_number} (Full)";
+            } else {
+                $v2ByTicket[$key][] = "Table {$v2->table_number} Seat {$v2->seat_number}";
+            }
+        }
+
+        // Group V1 bookings by Order/Ticket + Table so multi-seat orders can be placed in one action
+        $groups = [];
+        foreach ($v1List as $b) {
+            $groupKey = ($b->ticket_number ?: ('ID-' . $b->id)) . '|' . $b->category . '|' . ($b->side ?? '') . '|' . ($b->table_number ?? '');
+            if (!isset($groups[$groupKey])) {
+                $v1Loc = $b->category === 'standing'
+                    ? ucfirst($b->side ?? 'Center') . ' Standing'
+                    : 'Table ' . strtoupper(substr($b->side ?? 'L', 0, 1)) . $b->table_number;
+
+                $tKey = strtolower(trim((string)$b->ticket_number));
+                $v2Locations = ($tKey !== '' && isset($v2ByTicket[$tKey]))
+                    ? array_values(array_unique($v2ByTicket[$tKey]))
+                    : [];
+
+                $groups[$groupKey] = [
+                    'group_key' => $groupKey,
+                    'primary_id' => $b->id,
+                    'ids' => [],
+                    'name' => $b->name,
+                    'email' => $b->email,
+                    'ticket_number' => $b->ticket_number,
+                    'category' => $b->category,
+                    'side' => $b->side,
+                    'v1_table_number' => $b->table_number,
+                    'v1_location' => $v1Loc,
+                    'is_full_table' => (bool)$b->is_full_table,
+                    'is_temporary' => (bool)$b->is_temporary,
+                    'is_checked_in' => (bool)$b->is_checked_in,
+                    'seats' => [],
+                    'seat_count' => 0,
+                    'already_on_v2' => count($v2Locations) > 0,
+                    'v2_locations' => $v2Locations,
+                ];
+            }
+
+            $groups[$groupKey]['ids'][] = $b->id;
+            if ($b->is_full_table) {
+                $groups[$groupKey]['seats'] = [1, 2, 3, 4, 5, 6, 7, 8];
+                $groups[$groupKey]['seat_count'] = 8;
+            } else {
+                if ($b->seat_number) {
+                    $groups[$groupKey]['seats'][] = (int)$b->seat_number;
+                    sort($groups[$groupKey]['seats']);
+                }
+                $groups[$groupKey]['seat_count'] = count($groups[$groupKey]['ids']);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'base_groups' => array_values($groups),
+            'base_reservations' => $v1List,
+        ]);
+    }
+
+    /**
+     * Editor-Only: Import / Assign a Base Map (V1) booking onto the V2 Seat Map.
+     */
+    public function importFromBase(Request $request)
+    {
+        $v1Ids = $request->input('v1_ids', []);
+        if (!is_array($v1Ids)) {
+            $v1Ids = [$v1Ids];
+        }
+        if ($request->filled('v1_id')) {
+            $v1Ids[] = $request->input('v1_id');
+        }
+        $v1Ids = array_values(array_unique(array_filter(array_map('intval', $v1Ids))));
+
+        if (empty($v1Ids)) {
+            return response()->json(['success' => false, 'message' => 'Please select a Base Map booking to import.'], 422);
+        }
+
+        $v1Records = Reservation::mapV1()->whereIn('id', $v1Ids)->orderBy('seat_number', 'asc')->get();
+        if ($v1Records->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'Base Map booking not found.'], 404);
+        }
+
+        $first = $v1Records->first();
+        $removeFromBase = filter_var($request->input('remove_from_base', false), FILTER_VALIDATE_BOOLEAN);
+        $targetCategory = strtolower((string)$request->input('target_category', $first->category));
+
+        // 1. Standing import
+        if ($targetCategory === 'standing' || ($first->category === 'standing' && !$request->filled('table_number'))) {
+            $side = strtolower((string)$request->input('side', $first->side ?? 'left'));
+            if (!in_array($side, ['left', 'right'], true)) {
+                $side = 'left';
+            }
+
+            $created = [];
+            foreach ($v1Records as $rec) {
+                $created[] = Reservation::create([
+                    'map_type' => 'v2',
+                    'category' => 'standing',
+                    'side' => $side,
+                    'name' => $rec->name,
+                    'email' => $rec->email,
+                    'ticket_number' => $rec->ticket_number,
+                    'is_full_table' => false,
+                    'is_temporary' => (bool)$rec->is_temporary,
+                    'is_checked_in' => (bool)$rec->is_checked_in,
+                    'checked_in_at' => $rec->checked_in_at,
+                ]);
+                if ($removeFromBase) {
+                    $rec->delete();
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Imported {$first->name} (" . count($created) . " standing ticket(s)) to V2 " . strtoupper($side) . " Standing Area!",
+                'reservations' => $created,
+            ]);
+        }
+
+        // 2. Seated Table import onto V2 Table (1 - 130)
+        $request->validate([
+            'table_number' => 'required|integer|min:1|max:130',
+        ]);
+
+        $tableNumber = (int)$request->input('table_number');
+        $v2Category = $tableNumber <= 50 ? 'platinum' : 'gold';
+        $wantFullTable = $request->has('is_full_table')
+            ? filter_var($request->input('is_full_table'), FILTER_VALIDATE_BOOLEAN)
+            : (bool)$first->is_full_table;
+
+        try {
+            $created = DB::transaction(function () use ($request, $v1Records, $first, $tableNumber, $v2Category, $wantFullTable, $removeFromBase) {
+                $existingOnTable = Reservation::mapV2()
+                    ->where('table_number', $tableNumber)
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($existingOnTable->contains(fn($r) => (bool)$r->is_full_table)) {
+                    throw new \Exception("Table {$tableNumber} on V2 is already fully reserved.");
+                }
+
+                if ($wantFullTable) {
+                    if ($existingOnTable->isNotEmpty()) {
+                        throw new \Exception("Table {$tableNumber} already has individual seats booked. Choose an empty table for a Full Table import.");
+                    }
+
+                    $newRes = Reservation::create([
+                        'map_type' => 'v2',
+                        'category' => $v2Category,
+                        'side' => 'center',
+                        'table_number' => $tableNumber,
+                        'seat_number' => null,
+                        'is_full_table' => true,
+                        'is_temporary' => (bool)$first->is_temporary,
+                        'is_checked_in' => (bool)$first->is_checked_in,
+                        'checked_in_at' => $first->checked_in_at,
+                        'name' => $first->name,
+                        'email' => $first->email,
+                        'ticket_number' => $first->ticket_number,
+                    ]);
+
+                    if ($removeFromBase) {
+                        foreach ($v1Records as $rec) {
+                            $rec->delete();
+                        }
+                    }
+
+                    return [$newRes];
+                }
+
+                // Individual seat(s) import
+                $neededCount = $first->is_full_table ? 8 : $v1Records->count();
+                $takenSeats = $existingOnTable->pluck('seat_number')->filter()->map(fn($s) => (int)$s)->all();
+
+                $requestedSeats = $request->input('seat_numbers', []);
+                if (!is_array($requestedSeats)) {
+                    $requestedSeats = [$requestedSeats];
+                }
+                $requestedSeats = array_values(array_unique(array_filter(array_map('intval', $requestedSeats))));
+
+                if (!empty($requestedSeats)) {
+                    foreach ($requestedSeats as $s) {
+                        if ($s < 1 || $s > 8) {
+                            throw new \Exception("Seat number must be between 1 and 8.");
+                        }
+                        if (in_array($s, $takenSeats, true)) {
+                            throw new \Exception("Seat {$s} on Table {$tableNumber} is already reserved.");
+                        }
+                    }
+                    $targetSeats = $requestedSeats;
+                } else {
+                    // Try preserving original seat numbers if free, otherwise pick first available seats on Table
+                    $origSeats = $v1Records->pluck('seat_number')->filter()->map(fn($s) => (int)$s)->values()->all();
+                    $canUseOrig = count($origSeats) === $neededCount && count(array_intersect($origSeats, $takenSeats)) === 0;
+
+                    if ($canUseOrig) {
+                        $targetSeats = $origSeats;
+                    } else {
+                        $availableSeats = array_values(array_diff([1, 2, 3, 4, 5, 6, 7, 8], $takenSeats));
+                        if (count($availableSeats) < $neededCount) {
+                            throw new \Exception("Table {$tableNumber} only has " . count($availableSeats) . " available seat(s), but {$neededCount} seat(s) are needed.");
+                        }
+                        $targetSeats = array_slice($availableSeats, 0, $neededCount);
+                    }
+                }
+
+                sort($targetSeats);
+                $createdRows = [];
+                foreach ($targetSeats as $idx => $seatNum) {
+                    $src = $v1Records[$idx] ?? $first;
+                    $createdRows[] = Reservation::create([
+                        'map_type' => 'v2',
+                        'category' => $v2Category,
+                        'side' => 'center',
+                        'table_number' => $tableNumber,
+                        'seat_number' => $seatNum,
+                        'is_full_table' => false,
+                        'is_temporary' => (bool)$src->is_temporary,
+                        'is_checked_in' => (bool)$src->is_checked_in,
+                        'checked_in_at' => $src->checked_in_at,
+                        'name' => $src->name,
+                        'email' => $src->email,
+                        'ticket_number' => $src->ticket_number,
+                    ]);
+                }
+
+                if ($removeFromBase) {
+                    foreach ($v1Records as $rec) {
+                        $rec->delete();
+                    }
+                }
+
+                return $createdRows;
+            });
+
+            $seatDesc = $wantFullTable
+                ? 'Full Table (8 Seats)'
+                : 'Seat(s) ' . implode(', ', array_map(fn($r) => $r->seat_number, $created));
+
+            return response()->json([
+                'success' => true,
+                'message' => "Assigned {$first->name} to V2 Table {$tableNumber} ({$seatDesc})!",
+                'reservations' => $created,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Editor-Only: Move / Reallocate existing V2 seat(s) or full table to another Table & Seat(s).
+     */
+    public function moveAllocation(Request $request)
+    {
+        if (!auth()->check() || !method_exists(auth()->user(), 'isEditor') || !auth()->user()->isEditor()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only the Editor account (editor2026.kalabara@gmail.com) can move user seat allocations.',
+            ], 403);
+        }
+
+        $request->validate([
+            'target_table_number' => 'required|integer|min:1|max:130',
+        ]);
+
+        $reservationIds = $request->input('reservation_ids', []);
+        if (!is_array($reservationIds)) {
+            $reservationIds = [$reservationIds];
+        }
+        if ($request->filled('reservation_id')) {
+            $reservationIds[] = $request->input('reservation_id');
+        }
+        $reservationIds = array_values(array_unique(array_filter(array_map('intval', $reservationIds))));
+
+        if (empty($reservationIds)) {
+            return response()->json(['success' => false, 'message' => 'No reservation selected to move.'], 422);
+        }
+
+        $targetTable = (int)$request->input('target_table_number');
+        $targetCategory = $targetTable <= 50 ? 'platinum' : 'gold';
+
+        try {
+            $moved = DB::transaction(function () use ($request, $reservationIds, $targetTable, $targetCategory) {
+                $records = Reservation::mapV2()
+                    ->whereIn('id', $reservationIds)
+                    ->orderBy('seat_number', 'asc')
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($records->isEmpty()) {
+                    throw new \Exception('Reservation not found on V2 map.');
+                }
+
+                $first = $records->first();
+                $isFullTableMove = (bool)$first->is_full_table && $records->count() === 1;
+
+                // Check existing bookings on the target table (excluding the records being moved)
+                $existingOnTarget = Reservation::mapV2()
+                    ->where('table_number', $targetTable)
+                    ->whereNotIn('id', $reservationIds)
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($existingOnTarget->contains(fn($r) => (bool)$r->is_full_table)) {
+                    throw new \Exception("Target Table {$targetTable} is already fully reserved.");
+                }
+
+                if ($isFullTableMove) {
+                    if ($existingOnTarget->isNotEmpty()) {
+                        throw new \Exception("Target Table {$targetTable} already has individual seats reserved. Cannot move a Full Table there.");
+                    }
+
+                    $first->table_number = $targetTable;
+                    $first->category = $targetCategory;
+                    $first->seat_number = null;
+                    $first->is_full_table = true;
+                    $first->save();
+
+                    return [$first];
+                }
+
+                // Moving 1 or more individual seats
+                $takenSeats = $existingOnTarget->pluck('seat_number')->filter()->map(fn($s) => (int)$s)->all();
+                $requestedSeats = $request->input('target_seat_numbers', $request->input('target_seat_number', []));
+                if (!is_array($requestedSeats)) {
+                    $requestedSeats = $requestedSeats === null || $requestedSeats === '' ? [] : [$requestedSeats];
+                }
+                $requestedSeats = array_values(array_unique(array_filter(array_map('intval', $requestedSeats))));
+
+                $neededCount = $records->count();
+
+                if (!empty($requestedSeats)) {
+                    if (count($requestedSeats) !== $neededCount) {
+                        throw new \Exception("Please select {$neededCount} target seat(s) on Table {$targetTable}.");
+                    }
+                    foreach ($requestedSeats as $s) {
+                        if ($s < 1 || $s > 8) {
+                            throw new \Exception('Seat number must be between 1 and 8.');
+                        }
+                        if (in_array($s, $takenSeats, true)) {
+                            throw new \Exception("Seat {$s} on Table {$targetTable} is already occupied.");
+                        }
+                    }
+                    $targetSeats = $requestedSeats;
+                } else {
+                    // Preserve original seat numbers if free on target table, else pick first available seats
+                    $origSeats = $records->pluck('seat_number')->filter()->map(fn($s) => (int)$s)->values()->all();
+                    $canKeepSameSeats = count($origSeats) === $neededCount && count(array_intersect($origSeats, $takenSeats)) === 0;
+                    if ($canKeepSameSeats) {
+                        $targetSeats = $origSeats;
+                    } else {
+                        $avail = array_values(array_diff([1, 2, 3, 4, 5, 6, 7, 8], $takenSeats));
+                        if (count($avail) < $neededCount) {
+                            throw new \Exception("Table {$targetTable} only has " . count($avail) . " free seat(s), cannot move {$neededCount} seat(s) there.");
+                        }
+                        $targetSeats = array_slice($avail, 0, $neededCount);
+                    }
+                }
+
+                sort($targetSeats);
+                $updated = [];
+                foreach ($records->values() as $idx => $rec) {
+                    $rec->table_number = $targetTable;
+                    $rec->category = $targetCategory;
+                    $rec->seat_number = $targetSeats[$idx];
+                    $rec->is_full_table = false;
+                    $rec->save();
+                    $updated[] = $rec;
+                }
+
+                return $updated;
+            });
+
+            // Sync permanent moved bookings to Google Sheets
+            foreach ($moved as $m) {
+                if (!$m->is_temporary) {
+                    if (function_exists('Illuminate\Support\defer')) {
+                        \Illuminate\Support\defer(function () use ($m) {
+                            $this->googleSheets->updateReservation($m, $m->ticket_number);
+                        });
+                    } else {
+                        $this->googleSheets->updateReservation($m, $m->ticket_number);
+                    }
+                }
+            }
+
+            $firstMoved = $moved[0];
+            $desc = $firstMoved->is_full_table
+                ? "Table {$targetTable} (Full Table)"
+                : "Table {$targetTable} (Seat " . implode(', ', array_map(fn($r) => $r->seat_number, $moved)) . ")";
+
+            return response()->json([
+                'success' => true,
+                'message' => "Moved {$firstMoved->name} to {$desc}!",
+                'reservations' => $moved,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 
     private function syncAppendToSheet(array $reservations): void

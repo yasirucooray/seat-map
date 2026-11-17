@@ -46,7 +46,7 @@
             overflow-x: hidden;
         }
 
-        /* Header Bar */
+        /* Header Bar (Auto-Hides When Scrolling Down) */
         header {
             background: rgba(12, 10, 20, 0.85);
             backdrop-filter: blur(16px);
@@ -61,6 +61,13 @@
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
             flex-wrap: wrap;
             gap: 14px;
+            transition: transform 0.3s ease, opacity 0.25s ease;
+        }
+
+        header.header-hidden {
+            transform: translateY(-110%);
+            opacity: 0;
+            pointer-events: none;
         }
 
         .header-brand {
@@ -280,7 +287,7 @@
         .card-gold .progress-bar { background: var(--crimson-gradient); box-shadow: 0 0 10px var(--ruby-glow); }
         .card-checkin .progress-bar { background: linear-gradient(135deg, #39ff14, #10b981); box-shadow: 0 0 10px rgba(57, 255, 20, 0.45); }
 
-        /* Arena Card Container */
+        /* Main Arena Booking Card */
         .arena-card {
             background: var(--bg-card);
             border: 1px solid var(--border-gold);
@@ -295,8 +302,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 28px;
+            gap: 16px;
+            margin-bottom: 20px;
             padding: 16px 20px;
             background: rgba(14, 11, 23, 0.7);
             border: 1px solid var(--border-gold);
@@ -311,7 +318,7 @@
             align-items: center;
             gap: 12px;
             flex-grow: 1;
-            max-width: 580px;
+            max-width: 520px;
         }
 
         .search-input-group {
@@ -346,6 +353,69 @@
             border-color: #00f2fe;
             box-shadow: 0 0 18px rgba(0, 242, 254, 0.35);
             background: rgba(10, 8, 18, 0.95);
+        }
+
+        /* Editor Interactive Mode Banner (Move Allocation / Place V1 Booking) */
+        .editor-mode-banner {
+            position: sticky;
+            top: 78px;
+            z-index: 90;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.2) 0%, rgba(16, 185, 129, 0.22) 100%);
+            border: 2px solid #00f2fe;
+            border-radius: 16px;
+            padding: 14px 20px;
+            margin-bottom: 22px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.75), 0 0 25px rgba(0, 242, 254, 0.35);
+            backdrop-filter: blur(14px);
+        }
+        .editor-mode-banner.active {
+            display: flex;
+        }
+
+        /* Base Map (V1) Import Drawer */
+        .v1-import-drawer {
+            background: rgba(12, 10, 22, 0.95);
+            border: 1.5px solid var(--gold-primary);
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 26px;
+            display: none;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), 0 0 25px var(--gold-glow);
+        }
+        .v1-import-drawer.active {
+            display: block;
+        }
+        .v1-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 12px;
+            max-height: 340px;
+            overflow-y: auto;
+            padding-right: 6px;
+            margin-top: 14px;
+        }
+        .v1-booking-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(212, 175, 55, 0.28);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .v1-booking-card:hover {
+            border-color: var(--gold-primary);
+            background: rgba(212, 175, 55, 0.06);
+        }
+        .v1-booking-card.already-placed {
+            border-color: rgba(57, 255, 20, 0.35);
+            background: rgba(16, 185, 129, 0.06);
         }
 
         .stage-container {
@@ -1048,6 +1118,180 @@
         .toast-card.show { opacity: 1; transform: translateY(0); }
         .toast-success { border-left: 4px solid var(--neon-green); }
         .toast-error { border-left: 4px solid var(--ruby-red); }
+
+        .v2-grid-scroll-wrap {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+        }
+
+        /* Map Zoom Viewport & Controls (Responsive & True Proportional Scaling) */
+        .map-zoom-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0 auto 16px;
+            padding: 8px 14px;
+            background: rgba(14, 11, 23, 0.9);
+            border: 1px solid var(--border-gold);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 520px;
+            box-sizing: border-box;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+            position: sticky;
+            top: 10px;
+            z-index: 40;
+            backdrop-filter: blur(10px);
+        }
+        .zoom-ctrl-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(212, 175, 55, 0.45);
+            color: var(--gold-primary);
+            padding: 7px 13px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            font-family: 'Outfit', sans-serif;
+            white-space: nowrap;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .zoom-ctrl-btn:hover, .zoom-ctrl-btn:active {
+            background: var(--gold-gradient);
+            color: #07050d;
+            border-color: var(--gold-primary);
+            transform: scale(1.04);
+        }
+        .zoom-slider {
+            width: 110px;
+            accent-color: var(--gold-primary);
+            cursor: pointer;
+        }
+        .zoom-level-badge {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #00f2fe;
+            min-width: 64px;
+            text-align: center;
+            font-family: monospace;
+        }
+        .map-zoom-viewport {
+            width: 100%;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 18px;
+            position: relative;
+        }
+        .map-zoom-sizer {
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+        .map-zoom-canvas {
+            width: 880px;
+            transform-origin: top left;
+            transition: transform 0.15s ease-out;
+        }
+        .v2-map-wrapper {
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Responsive Layout Adjustments (Full Seat Map Fits on Mobile Screen by Default!) */
+        @media (max-width: 1240px) {
+            .metrics-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            header {
+                padding: 10px 14px;
+                flex-direction: column;
+                text-align: center;
+                gap: 8px;
+            }
+            .header-brand {
+                flex-direction: row;
+                justify-content: center;
+                gap: 10px;
+            }
+            .brand-title-group h1 {
+                font-size: 1.45rem;
+            }
+            .event-info-pills, .header-actions {
+                justify-content: center;
+                gap: 8px;
+            }
+            .dashboard-container {
+                padding: 0 10px 60px;
+                margin: 14px auto;
+            }
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            .metric-card {
+                padding: 14px 16px;
+            }
+            .metric-value {
+                font-size: 1.65rem;
+            }
+            .arena-card {
+                padding: 14px 8px;
+                border-radius: 18px;
+            }
+            .map-zoom-controls {
+                padding: 6px 10px;
+                gap: 6px;
+                border-radius: 16px;
+            }
+            .zoom-ctrl-btn {
+                padding: 6px 10px;
+                font-size: 0.74rem;
+            }
+            .zoom-slider {
+                width: 85px;
+            }
+            .recent-section {
+                padding: 16px 10px;
+            }
+            table.recent-table th, table.recent-table td {
+                padding: 10px 8px;
+                font-size: 0.78rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .arena-toolbar {
+                padding: 10px;
+                gap: 8px;
+            }
+            .arena-search-box {
+                width: 100%;
+                max-width: 100%;
+            }
+            .modal-content {
+                padding: 18px 14px;
+                width: 95%;
+            }
+            .seats-container {
+                transform: scale(0.85);
+                margin-bottom: 6px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1084,7 +1328,11 @@
             <a href="{{ route('v2.scanner') }}" class="btn-primary" style="width: auto; margin: 0; padding: 8px 16px; font-size: 0.82rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #39ff14 0%, #10b981 100%); color: #07050d; font-weight: 800; box-shadow: 0 0 18px rgba(57, 255, 20, 0.4); border-radius: 20px;">
                 📷 QR Check-In Scanner
             </a>
-            <span class="admin-badge">♠ ADMIN CONTROL</span>
+            @if (!empty($isEditor))
+                <span class="admin-badge" style="border-color: #00f2fe; color: #00f2fe; background: rgba(0, 242, 254, 0.12); box-shadow: 0 0 12px rgba(0, 242, 254, 0.35);">✦ EDITOR ACCESS</span>
+            @else
+                <span class="admin-badge">♠ ADMIN CONTROL</span>
+            @endif
             <form action="/logout" method="POST" style="margin: 0;">
                 @csrf
                 <button type="submit" class="logout-btn">Log Out</button>
@@ -1185,96 +1433,174 @@
         <!-- Main Arena Booking Card -->
         <div class="arena-card">
             <div class="arena-toolbar">
-                <div class="arena-search-box">
+                <form class="arena-search-box" onsubmit="event.preventDefault(); executeV2Search();" style="max-width: 640px;">
                     <div class="search-input-group">
                         <span class="search-glass-icon">🔍</span>
                         <input type="text" id="v2-search-input" class="seat-search-input"
-                               placeholder="Search guest name, email, order no, or table number (1 - 130)..."
-                               oninput="handleV2Search(this.value)" autocomplete="off" />
+                               placeholder="Enter guest name, email, order no, or table (1 - 130)..."
+                               autocomplete="off" />
                     </div>
+                    <button type="submit" class="btn-primary" style="width: auto; padding: 10px 18px; font-size: 0.84rem; border-radius: 20px; white-space: nowrap;">
+                        🔍 Search
+                    </button>
+                    <button type="button" id="v2-search-clear-btn" class="logout-btn" style="display: none; padding: 9px 14px; font-size: 0.8rem; border-radius: 20px; white-space: nowrap;" onclick="clearV2Search()">
+                        ✕ Clear
+                    </button>
+                    <span id="v2-search-match-badge" style="display: none; font-size: 0.8rem; font-weight: 800; color: #00f2fe; white-space: nowrap;"></span>
+                </form>
+
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" class="btn-primary" style="width: auto; padding: 10px 18px; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 8px; border-radius: 20px;" onclick="toggleV1ImportDrawer()">
+                        📥 Add from Base Map (V1) Bookings
+                        <span id="v1-unassigned-badge" style="background: #07050d; color: var(--gold-primary); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">0</span>
+                    </button>
                 </div>
             </div>
 
-            <div class="stage-container">
-                <div class="stage-banner">
-                    <div class="stage-title">♠ STAGE (66 FT) ♠</div>
-                    <div class="stage-subtitle">KALABARA LIVE • WATERS EDGE</div>
+            <!-- Interactive Editor Mode Banner (Shown when Moving a V2 Seat/Table or Placing a V1 Booking) -->
+            <div class="editor-mode-banner" id="editor-mode-banner">
+                <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                    <span style="font-size: 1.4rem;" id="editor-mode-icon">⇄</span>
+                    <div>
+                        <div style="font-size: 0.75rem; font-weight: 800; color: #00f2fe; text-transform: uppercase; letter-spacing: 0.08em;" id="editor-mode-title">
+                            EDITOR SEAT ALLOCATION MOVE MODE
+                        </div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #fff;" id="editor-mode-desc">
+                            Click any Table (1–130) on the map below to move the guest here.
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="logout-btn" style="background: rgba(230, 57, 70, 0.25); border-color: var(--ruby-red);" onclick="cancelEditorMode()">
+                    ✕ Cancel Mode
+                </button>
+            </div>
+
+            <!-- Collapsible Base Map (V1) Bookings Import Drawer -->
+            <div class="v1-import-drawer" id="v1-import-drawer">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(212, 175, 55, 0.2);">
+                    <div>
+                        <h3 style="margin: 0; font-family: 'Cinzel', serif; color: var(--gold-primary); font-size: 1.1rem;">
+                            📥 Assign Base Map (V1) Bookings to New 13×10 Seat Map
+                        </h3>
+                        <p style="margin: 4px 0 0; font-size: 0.8rem; color: var(--text-muted);">
+                            Type a target Table number (1–130) and click <strong>Assign</strong>, or click <strong>📌 Pick on Map</strong> and click any table below.
+                        </p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <input type="text" id="v1-filter-input" class="seat-search-input" style="width: 210px; padding: 8px 14px;" placeholder="Filter V1 name, order, L12..." onkeydown="if(event.key==='Enter'){event.preventDefault();renderV1ImportList();}">
+                        <button type="button" class="btn-primary" style="width: auto; padding: 8px 14px; font-size: 0.78rem; border-radius: 18px;" onclick="renderV1ImportList()">🔍 Search</button>
+                        <label style="font-size: 0.8rem; color: #cbd5e1; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="checkbox" id="v1-hide-placed" onchange="renderV1ImportList()">
+                            Hide already placed on V2
+                        </label>
+                        <button type="button" class="logout-btn" style="padding: 6px 12px;" onclick="toggleV1ImportDrawer()">Close</button>
+                    </div>
+                </div>
+
+                <div class="v1-cards-grid" id="v1-cards-grid">
+                    <div style="color: var(--text-muted); font-size: 0.85rem;">Loading Base Map bookings...</div>
                 </div>
             </div>
 
-            <!-- Color Legend (Identical to V1) -->
-            <div class="arena-legend">
-                <div class="arena-legend-item">
-                    <span class="legend-dot" style="background: rgba(57, 255, 20, 0.15); border: 1px solid var(--neon-green);"></span>
-                    <span>Available</span>
-                </div>
-                <div class="arena-legend-item">
-                    <span class="legend-dot" style="background: rgba(245, 207, 109, 0.25); border: 1px solid var(--gold-primary);"></span>
-                    <span>Partially Reserved</span>
-                </div>
-                <div class="arena-legend-item">
-                    <span class="legend-dot" style="background: rgba(230, 57, 70, 0.3); border: 1px solid var(--ruby-red);"></span>
-                    <span>Fully Reserved (Permanent - Excel Synced)</span>
-                </div>
-                <div class="arena-legend-item">
-                    <span class="legend-dot" style="background: rgba(245, 158, 11, 0.25); border: 1px dashed #f59e0b;"></span>
-                    <span style="color: #fbbf24; font-weight: 700;">⏳ Temporary Hold (Name Only - Excluded from Excel)</span>
-                </div>
-                <div class="arena-legend-item">
-                    <span class="legend-dot" style="background: rgba(16, 185, 129, 0.35); border: 1px solid var(--neon-green);"></span>
-                    <span style="color: var(--neon-green); font-weight: 700;">🔒 Checked-In Seat (Seated Users Only)</span>
-                </div>
+            <!-- Map Zoom Controls (Fit Full Screen on Mobile or Zoom In/Out Smoothly) -->
+            <div class="map-zoom-controls">
+                <button type="button" class="zoom-ctrl-btn" onclick="stepMapZoom(-0.15)">➖ Zoom Out</button>
+                <input type="range" id="map-zoom-slider" class="zoom-slider" min="35" max="200" value="100" oninput="setMapZoomFromSlider(this.value)">
+                <span class="zoom-level-badge" id="map-zoom-label">Fit</span>
+                <button type="button" class="zoom-ctrl-btn" onclick="fitMapToViewport()">📐 Fit</button>
+                <button type="button" class="zoom-ctrl-btn" onclick="stepMapZoom(0.15)">➕ Zoom In</button>
             </div>
 
-            <div class="v2-map-wrapper">
-                <!-- VIP Section: Rows 1 - 5 (Tables 1 - 50, 8 Seats per Table) -->
-                <div class="category-section">
-                    <div class="category-section-title platinum-section-title">
-                        <span>♠</span> VIP (Tables 1 - 50 • Rows 1 - 5)
-                    </div>
-                    <div class="v2-col-headers">
-                        <div></div>
-                        @for ($c = 1; $c <= 10; $c++)
-                            <div class="v2-axis-badge">{{ $c }}</div>
-                        @endfor
-                    </div>
-                    <div id="platinum-v2-rows"></div>
-                </div>
-
-                <!-- Gold Section: Rows 6 - 13 (Tables 51 - 130, 8 Seats per Table) -->
-                <div class="category-section">
-                    <div class="category-section-title gold-section-title">
-                        <span>♥</span> GOLD (Tables 51 - 130 • Rows 6 - 13)
-                    </div>
-                    <div class="v2-col-headers">
-                        <div></div>
-                        @for ($c = 1; $c <= 10; $c++)
-                            <div class="v2-axis-badge">{{ $c }}</div>
-                        @endfor
-                    </div>
-                    <div id="gold-v2-rows"></div>
-                </div>
-
-                <!-- Bottom Section: Left Standing | FOH + Entrance | Right Standing -->
-                <div class="v2-bottom-layout">
-                    <div class="standing-box" onclick="openStandingBooking('left')">
-                        <div class="suit-icon">♣</div>
-                        <h3>Left Standing Area</h3>
-                        <p id="left-standing-count">Click to reserve</p>
-                    </div>
-
-                    <div class="foh-entrance-card">
-                        <div class="foh-block">FOH</div>
-                        <div class="entrance-block">
-                            <span style="color: var(--gold-primary); font-size: 1.4rem; line-height: 1; margin-bottom: 4px;">⬆</span>
-                            <span>ENTRANCE</span>
+            <div class="map-zoom-viewport" id="v2-zoom-viewport">
+                <div class="map-zoom-sizer" id="v2-zoom-sizer">
+                    <div class="map-zoom-canvas" id="v2-zoom-canvas">
+                    <div class="stage-container">
+                        <div class="stage-banner">
+                            <div class="stage-title">♠ STAGE (66 FT) ♠</div>
+                            <div class="stage-subtitle">KALABARA LIVE • WATERS EDGE</div>
                         </div>
                     </div>
 
-                    <div class="standing-box" onclick="openStandingBooking('right')">
-                        <div class="suit-icon">♥</div>
-                        <h3>Right Standing Area</h3>
-                        <p id="right-standing-count">Click to reserve</p>
+                    <!-- Color Legend (Identical to V1) -->
+                    <div class="arena-legend">
+                        <div class="arena-legend-item">
+                            <span class="legend-dot" style="background: rgba(57, 255, 20, 0.15); border: 1px solid var(--neon-green);"></span>
+                            <span>Available</span>
+                        </div>
+                        <div class="arena-legend-item">
+                            <span class="legend-dot" style="background: rgba(245, 207, 109, 0.25); border: 1px solid var(--gold-primary);"></span>
+                            <span>Partially Reserved</span>
+                        </div>
+                        <div class="arena-legend-item">
+                            <span class="legend-dot" style="background: rgba(230, 57, 70, 0.3); border: 1px solid var(--ruby-red);"></span>
+                            <span>Fully Reserved (Permanent - Excel Synced)</span>
+                        </div>
+                        <div class="arena-legend-item">
+                            <span class="legend-dot" style="background: rgba(245, 158, 11, 0.25); border: 1px dashed #f59e0b;"></span>
+                            <span style="color: #fbbf24; font-weight: 700;">⏳ Temporary Hold (Name Only - Excluded from Excel)</span>
+                        </div>
+                        <div class="arena-legend-item">
+                            <span class="legend-dot" style="background: rgba(16, 185, 129, 0.35); border: 1px solid var(--neon-green);"></span>
+                            <span style="color: var(--neon-green); font-weight: 700;">🔒 Checked-In Seat (Seated Users Only)</span>
+                        </div>
+                    </div>
+
+                    <div class="v2-map-wrapper">
+                        <!-- VIP Section: Rows 1 - 5 (Tables 1 - 50, 8 Seats per Table) -->
+                        <div class="category-section">
+                            <div class="category-section-title platinum-section-title">
+                                <span>♠</span> VIP (Tables 1 - 50 • Rows 1 - 5)
+                            </div>
+                            <div class="v2-grid-scroll-wrap">
+                                <div class="v2-col-headers">
+                                    <div></div>
+                                    @for ($c = 1; $c <= 10; $c++)
+                                        <div class="v2-axis-badge">{{ $c }}</div>
+                                    @endfor
+                                </div>
+                                <div id="platinum-v2-rows"></div>
+                            </div>
+                        </div>
+
+                        <!-- Gold Section: Rows 6 - 13 (Tables 51 - 130, 8 Seats per Table) -->
+                        <div class="category-section">
+                            <div class="category-section-title gold-section-title">
+                                <span>♥</span> GOLD (Tables 51 - 130 • Rows 6 - 13)
+                            </div>
+                            <div class="v2-grid-scroll-wrap">
+                                <div class="v2-col-headers">
+                                    <div></div>
+                                    @for ($c = 1; $c <= 10; $c++)
+                                        <div class="v2-axis-badge">{{ $c }}</div>
+                                    @endfor
+                                </div>
+                                <div id="gold-v2-rows"></div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Section: Left Standing | FOH + Entrance | Right Standing -->
+                        <div class="v2-bottom-layout">
+                            <div class="standing-box" onclick="openStandingBooking('left')">
+                                <div class="suit-icon">♣</div>
+                                <h3>Left Standing Area</h3>
+                                <p id="left-standing-count">Click to reserve</p>
+                            </div>
+
+                            <div class="foh-entrance-card">
+                                <div class="foh-block">FOH</div>
+                                <div class="entrance-block">
+                                    <span style="color: var(--gold-primary); font-size: 1.4rem; line-height: 1; margin-bottom: 4px;">⬆</span>
+                                    <span>ENTRANCE</span>
+                                </div>
+                            </div>
+
+                            <div class="standing-box" onclick="openStandingBooking('right')">
+                                <div class="suit-icon">♥</div>
+                                <h3>Right Standing Area</h3>
+                                <p id="right-standing-count">Click to reserve</p>
+                            </div>
+                        </div>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -1310,6 +1636,22 @@
             <div class="modal-header">
                 <h3 class="modal-title" id="modal-table-title">Table Detail</h3>
                 <button class="close-modal" onclick="closeModal('seating-modal')">&times;</button>
+            </div>
+
+            <!-- Editor Transfer / Placement Action Box inside Modal (When Moving a Seat or Placing a V1 Booking) -->
+            <div id="modal-editor-transfer-box" style="display: none; background: linear-gradient(135deg, rgba(0, 242, 254, 0.14), rgba(16, 185, 129, 0.16)); border: 1.5px solid #00f2fe; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;">
+                <div style="font-size: 0.76rem; font-weight: 800; color: #00f2fe; text-transform: uppercase; letter-spacing: 0.06em;" id="modal-transfer-title">
+                    ⇄ EDITOR SEAT REALLOCATION
+                </div>
+                <div style="font-size: 0.88rem; color: #fff; margin: 4px 0 10px;" id="modal-transfer-desc"></div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-primary" id="btn-confirm-transfer-here" style="background: linear-gradient(135deg, #00f2fe, #10b981); color: #07050d; font-weight: 900; padding: 10px 14px; font-size: 0.85rem; width: auto; flex: 1;" onclick="executeEditorTransferToActiveTable()">
+                        ✓ Confirm Allocation Here
+                    </button>
+                    <button type="button" class="logout-btn" style="padding: 8px 12px; font-size: 0.8rem;" onclick="cancelEditorMode()">
+                        Cancel
+                    </button>
+                </div>
             </div>
 
             <!-- Temporary Allocation Banner -->
@@ -1357,6 +1699,42 @@
                 <strong>Allocated Name:</strong> <span id="bubble-name" style="color: var(--gold-primary); font-weight: 700;"></span><br>
                 <div id="bubble-email-row"><strong>Email:</strong> <span id="bubble-email"></span></div>
                 <div id="bubble-ticket-row"><strong>Ticket No:</strong> <span id="bubble-ticket" style="color: var(--gold-primary);"></span></div>
+
+                <!-- Editor-Only Quick Reallocate / Move Seat Section (Visible ONLY to editor2026.kalabara@gmail.com) -->
+                @if (!empty($isEditor))
+                <div id="editor-move-controls-box" style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(0, 242, 254, 0.35);">
+                    <div style="font-size: 0.75rem; font-weight: 800; color: #00f2fe; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;">
+                        ⇄ Editor: Move / Reallocate User Seat
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 8px;">
+                        <input type="number" id="quick-move-table" min="1" max="130" placeholder="Table (1-130)" style="width: 115px; background: rgba(7,5,13,0.9); border: 1px solid rgba(0,242,254,0.45); border-radius: 8px; padding: 6px 10px; color: #fff; font-size: 0.8rem;">
+                        <select id="quick-move-seat" style="background: rgba(7,5,13,0.9); border: 1px solid rgba(0,242,254,0.45); border-radius: 8px; padding: 6px 8px; color: #fff; font-size: 0.8rem;">
+                            <option value="">Auto / Keep Seat</option>
+                            <option value="1">Seat 1</option>
+                            <option value="2">Seat 2</option>
+                            <option value="3">Seat 3</option>
+                            <option value="4">Seat 4</option>
+                            <option value="5">Seat 5</option>
+                            <option value="6">Seat 6</option>
+                            <option value="7">Seat 7</option>
+                            <option value="8">Seat 8</option>
+                        </select>
+                        <select id="quick-move-scope" style="background: rgba(7,5,13,0.9); border: 1px solid rgba(212,175,55,0.4); border-radius: 8px; padding: 6px 8px; color: var(--gold-primary); font-size: 0.78rem;">
+                            <option value="single">This Seat Only</option>
+                            <option value="group">All Guest's Seats on Table</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #00f2fe, #4facfe); color: #07050d; font-weight: 800; padding: 7px 12px; font-size: 0.8rem; width: auto;" onclick="submitQuickMoveFromBubble()">
+                            ⇄ Move to Table Now
+                        </button>
+                        <button type="button" class="btn-primary" style="background: rgba(0, 242, 254, 0.14); border: 1px solid #00f2fe; color: #00f2fe; font-weight: 800; padding: 7px 12px; font-size: 0.8rem; width: auto; box-shadow: none;" onclick="startMoveOnMapFromBubble()">
+                            📌 Click Target Table on Map
+                        </button>
+                    </div>
+                </div>
+                @endif
+
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
                     <button id="btn-make-seat-perm" class="btn-primary" style="display: none; background: var(--gold-gradient); color: #110e1c; font-weight: 800; padding: 8px 12px; font-size: 0.85rem; width: auto;" onclick="openMakePermanentForActiveSeat()">✨ Add Details &amp; Make Permanent</button>
                     <button id="btn-toggle-seat-checkin" class="btn-primary" style="display: none; background: linear-gradient(135deg, #39ff14, #10b981); color: #07050d; font-weight: 800; padding: 8px 12px; font-size: 0.85rem; width: auto;" onclick="toggleActiveSeatCheckIn()">🔒 Mark as Checked-In</button>
@@ -1540,7 +1918,10 @@
             el.style.top = `${150 + y - 22}px`;
         });
 
+        const IS_EDITOR = @json(!empty($isEditor));
         let reservationsList = [];
+        let baseGroupsList = [];
+        let editorTransferState = null; // { mode: 'v2_move' | 'v1_import', ... }
         let activeCategory = '';
         let activeTable = null;
         let activeBooking = null;
@@ -1560,7 +1941,198 @@
                 renderGrids();
                 updateStats();
                 reloadRecentBookingsTable();
+                fetchBaseBookings();
             }
+        }
+
+        async function fetchBaseBookings() {
+            try {
+                const res = await fetch('/api/v2/base-bookings');
+                if (res.ok) {
+                    const data = await res.json();
+                    baseGroupsList = data.base_groups || [];
+                    const unassignedCount = baseGroupsList.filter(g => !g.already_on_v2).length;
+                    const badge = document.getElementById('v1-unassigned-badge');
+                    if (badge) badge.innerText = unassignedCount;
+                    renderV1ImportList();
+                }
+            } catch (err) {
+                console.error('Error fetching base V1 bookings:', err);
+            }
+        }
+
+        function toggleV1ImportDrawer() {
+            const drawer = document.getElementById('v1-import-drawer');
+            if (!drawer) return;
+            drawer.classList.toggle('active');
+            if (drawer.classList.contains('active')) {
+                fetchBaseBookings();
+            }
+        }
+
+        function renderV1ImportList() {
+            const grid = document.getElementById('v1-cards-grid');
+            if (!grid) return;
+
+            const q = (document.getElementById('v1-filter-input')?.value || '').trim().toLowerCase();
+            const hidePlaced = Boolean(document.getElementById('v1-hide-placed')?.checked);
+
+            const filtered = baseGroupsList.filter(g => {
+                if (hidePlaced && g.already_on_v2) return false;
+                if (!q) return true;
+                return (g.name && g.name.toLowerCase().includes(q)) ||
+                       (g.ticket_number && g.ticket_number.toLowerCase().includes(q)) ||
+                       (g.v1_location && g.v1_location.toLowerCase().includes(q)) ||
+                       (g.category && g.category.toLowerCase().includes(q));
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 18px; color: var(--text-muted);">No matching Base Map (V1) bookings found.</div>`;
+                return;
+            }
+
+            grid.innerHTML = '';
+            filtered.forEach(g => {
+                const card = document.createElement('div');
+                card.className = 'v1-booking-card' + (g.already_on_v2 ? ' already-placed' : '');
+
+                const seatDesc = g.category === 'standing'
+                    ? `${g.seat_count} Standing Ticket(s)`
+                    : (g.is_full_table ? 'Full Table (8 Seats)' : `Seat(s): ${g.seats.join(', ')} (${g.seat_count})`);
+
+                const placedBadge = g.already_on_v2
+                    ? `<span class="badge-status-checkin" style="font-size:0.68rem;">✓ On V2: ${escapeModalHtml(g.v2_locations.join(', '))}</span>`
+                    : `<span class="badge-status-temp" style="font-size:0.68rem;">Not on V2 Yet</span>`;
+
+                let actionControls = '';
+                if (g.category === 'standing') {
+                    actionControls = `
+                        <div style="display:flex;gap:6px;margin-top:4px;">
+                            <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.75rem;width:auto;flex:1;" onclick='importStandingV1(${JSON.stringify(g.ids)}, "left")'>⚡ Add to Left Standing</button>
+                            <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.75rem;width:auto;flex:1;" onclick='importStandingV1(${JSON.stringify(g.ids)}, "right")'>⚡ Add to Right Standing</button>
+                        </div>
+                    `;
+                } else {
+                    actionControls = `
+                        <div style="display:flex;gap:6px;align-items:center;margin-top:4px;">
+                            <input type="number" id="v1-target-tbl-${g.primary_id}" min="1" max="130" placeholder="V2 Table (1-130)" style="width:125px;background:rgba(7,5,13,0.9);border:1px solid var(--border-gold);border-radius:8px;padding:6px 8px;color:#fff;font-size:0.78rem;">
+                            <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.76rem;width:auto;" onclick='quickImportV1ToTable(${JSON.stringify(g.ids)}, ${g.primary_id}, ${g.is_full_table ? "true" : "false"})'>⚡ Assign</button>
+                            <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.76rem;width:auto;background:rgba(0,242,254,0.16);border:1px solid #00f2fe;color:#00f2fe;box-shadow:none;" onclick='startPlaceV1OnMap(${JSON.stringify(g).replace(/'/g, "&#39;")})'>📌 Pick on Map</button>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                        <div>
+                            <div style="font-weight:800;color:#fff;font-size:0.92rem;">${escapeModalHtml(g.name)}</div>
+                            <div style="font-size:0.75rem;color:var(--gold-primary);font-family:monospace;">${g.is_temporary ? '⏳ TEMP HOLD' : escapeModalHtml(g.ticket_number)}</div>
+                        </div>
+                        ${placedBadge}
+                    </div>
+                    <div style="font-size:0.78rem;color:#cbd5e1;">
+                        <span class="category-badge badge-${g.category}" style="padding:2px 6px;font-size:0.68rem;margin-right:4px;">${g.category}</span>
+                        <strong>V1:</strong> ${escapeModalHtml(g.v1_location)} • ${escapeModalHtml(seatDesc)}
+                    </div>
+                    ${actionControls}
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function importStandingV1(v1Ids, side) {
+            showLoader('Importing standing booking from Base Map...');
+            try {
+                const res = await fetch('/api/v2/import-from-base', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        v1_ids: v1Ids,
+                        target_category: 'standing',
+                        side: side
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(data.message, 'success');
+                    await fetchBookingsAndRender();
+                } else {
+                    showToast(data.message || 'Import failed.', 'error');
+                }
+            } catch (err) {
+                showToast('Error importing standing booking.', 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        async function quickImportV1ToTable(v1Ids, primaryId, isFullTable) {
+            const input = document.getElementById(`v1-target-tbl-${primaryId}`);
+            const tbl = parseInt(input?.value || '0', 10);
+            if (!tbl || tbl < 1 || tbl > 130) {
+                showToast('Please enter a valid V2 Table number (1 to 130).', 'error');
+                return;
+            }
+
+            showLoader(`Assigning Base Map booking to V2 Table ${tbl}...`);
+            try {
+                const res = await fetch('/api/v2/import-from-base', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        v1_ids: v1Ids,
+                        table_number: tbl,
+                        is_full_table: isFullTable
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(data.message, 'success');
+                    await fetchBookingsAndRender();
+                } else {
+                    showToast(data.message || 'Could not assign to that table.', 'error');
+                }
+            } catch (err) {
+                showToast('Error assigning booking to V2 table.', 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function startPlaceV1OnMap(groupObj) {
+            editorTransferState = {
+                mode: 'v1_import',
+                v1Group: groupObj
+            };
+            const banner = document.getElementById('editor-mode-banner');
+            const title = document.getElementById('editor-mode-title');
+            const desc = document.getElementById('editor-mode-desc');
+            const icon = document.getElementById('editor-mode-icon');
+            if (banner) {
+                icon.innerText = '📌';
+                title.innerText = 'PLACING BASE MAP (V1) BOOKING ON V2 MAP';
+                const seatInfo = groupObj.is_full_table ? 'Full Table (8 Seats)' : `${groupObj.seat_count} Seat(s)`;
+                desc.innerText = `Placing "${groupObj.name}" (${seatInfo} from V1 ${groupObj.v1_location}) — Click any Table (1–130) below!`;
+                banner.classList.add('active');
+                banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            showToast(`Click any Table (1–130) on the map to place ${groupObj.name}!`, 'success');
+        }
+
+        function cancelEditorMode() {
+            editorTransferState = null;
+            const banner = document.getElementById('editor-mode-banner');
+            if (banner) banner.classList.remove('active');
+            const modalBox = document.getElementById('modal-editor-transfer-box');
+            if (modalBox) modalBox.style.display = 'none';
         }
 
         function escapeModalHtml(str) {
@@ -1583,6 +2155,13 @@
             if (leftEl) leftEl.innerText = leftTemp > 0 ? `${leftPerm} Sold • ${leftTemp} Temp (Click to reserve)` : `${leftPerm} Sold (Click to reserve)`;
             const rightEl = document.getElementById('right-standing-count');
             if (rightEl) rightEl.innerText = rightTemp > 0 ? `${rightPerm} Sold • ${rightTemp} Temp (Click to reserve)` : `${rightPerm} Sold (Click to reserve)`;
+
+            if (!window.__v2InitialZoomSet) {
+                window.__v2InitialZoomSet = true;
+                fitMapToViewport();
+            } else {
+                applyMapScale(false);
+            }
         }
 
         function renderRowsSection(category, startRow, endRow, containerId) {
@@ -1780,6 +2359,31 @@
             }
 
             updateSelectedSeatsButton();
+
+            // Show Editor Transfer / Placement Action Box inside the modal if Editor Mode is active
+            const transferBox = document.getElementById('modal-editor-transfer-box');
+            const transferTitle = document.getElementById('modal-transfer-title');
+            const transferDesc = document.getElementById('modal-transfer-desc');
+            const transferBtn = document.getElementById('btn-confirm-transfer-here');
+
+            if (editorTransferState && transferBox) {
+                transferBox.style.display = 'block';
+                if (editorTransferState.mode === 'v2_move') {
+                    transferTitle.innerText = '⇄ MOVE USER ALLOCATION TO THIS TABLE';
+                    const countLabel = editorTransferState.isFullTable ? 'Full Table (8 Seats)' : `${editorTransferState.ids.length} Seat(s)`;
+                    transferDesc.innerHTML = `Moving <strong>${escapeModalHtml(editorTransferState.guestName)}</strong> (${countLabel} from Table ${editorTransferState.sourceTable}) to <strong>Table ${tableNumber}</strong>.<br><span style="font-size:0.76rem;color:#cbd5e1;">Tip: You can click specific green seat circles (1–8) below first, or click confirm to auto-assign seats.</span>`;
+                    transferBtn.innerText = `✓ Move ${editorTransferState.guestName} to Table ${tableNumber}`;
+                } else if (editorTransferState.mode === 'v1_import') {
+                    const g = editorTransferState.v1Group;
+                    transferTitle.innerText = '📥 ASSIGN BASE MAP (V1) BOOKING TO THIS TABLE';
+                    const countLabel = g.is_full_table ? 'Full Table (8 Seats)' : `${g.seat_count} Seat(s)`;
+                    transferDesc.innerHTML = `Assigning <strong>${escapeModalHtml(g.name)}</strong> (${countLabel} from V1 ${escapeModalHtml(g.v1_location)}) to <strong>Table ${tableNumber}</strong>.<br><span style="font-size:0.76rem;color:#cbd5e1;">Tip: Select specific green seat circles (1–8) below or click confirm to auto-assign seats.</span>`;
+                    transferBtn.innerText = `✓ Assign ${g.name} to Table ${tableNumber}`;
+                }
+            } else if (transferBox) {
+                transferBox.style.display = 'none';
+            }
+
             openModal('seating-modal');
         }
 
@@ -1862,6 +2466,19 @@
             document.getElementById('bubble-email').innerText = booking.email || 'Not added yet';
             document.getElementById('bubble-ticket').innerText = isTemp ? 'Pending Permanent Confirmation' : booking.ticket_number;
 
+            // Populate default Quick-Move fields in bubble
+            const qTableInput = document.getElementById('quick-move-table');
+            const qSeatSelect = document.getElementById('quick-move-seat');
+            const qScopeSelect = document.getElementById('quick-move-scope');
+            if (qTableInput) qTableInput.value = booking.table_number || '';
+            if (qSeatSelect) {
+                qSeatSelect.value = booking.seat_number ? String(booking.seat_number) : '';
+                qSeatSelect.style.display = booking.is_full_table ? 'none' : 'inline-block';
+            }
+            if (qScopeSelect) {
+                qScopeSelect.style.display = booking.is_full_table ? 'none' : 'inline-block';
+            }
+
             emailRow.style.display = isTemp && !booking.email ? 'none' : 'block';
             btnMakePerm.style.display = isTemp ? 'inline-block' : 'none';
             btnCopyUrl.style.display = isTemp ? 'none' : 'inline-block';
@@ -1869,6 +2486,137 @@
 
             bubble.style.display = 'block';
             setTimeout(() => bubble.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+        }
+
+        function getActiveMoveIds() {
+            if (!activeBooking) return [];
+            if (activeBooking.is_full_table) return [activeBooking.id];
+            const scope = document.getElementById('quick-move-scope')?.value || 'single';
+            if (scope === 'group') {
+                return reservationsList
+                    .filter(r =>
+                        parseInt(r.table_number, 10) === parseInt(activeBooking.table_number, 10) &&
+                        !r.is_full_table &&
+                        ((activeBooking.ticket_number && r.ticket_number === activeBooking.ticket_number) || r.name === activeBooking.name)
+                    )
+                    .map(r => r.id);
+            }
+            return [activeBooking.id];
+        }
+
+        async function submitQuickMoveFromBubble() {
+            if (!activeBooking) return;
+            const targetTable = parseInt(document.getElementById('quick-move-table')?.value || '0', 10);
+            if (!targetTable || targetTable < 1 || targetTable > 130) {
+                showToast('Please enter a valid target Table number (1 to 130).', 'error');
+                return;
+            }
+            const seatVal = document.getElementById('quick-move-seat')?.value || '';
+            const ids = getActiveMoveIds();
+            const targetSeatNumbers = (!activeBooking.is_full_table && ids.length === 1 && seatVal) ? [parseInt(seatVal, 10)] : [];
+
+            await performMoveAllocation(ids, targetTable, targetSeatNumbers);
+        }
+
+        function startMoveOnMapFromBubble() {
+            if (!activeBooking) return;
+            const ids = getActiveMoveIds();
+            editorTransferState = {
+                mode: 'v2_move',
+                ids: ids,
+                guestName: activeBooking.name,
+                sourceTable: activeBooking.table_number,
+                isFullTable: Boolean(activeBooking.is_full_table)
+            };
+
+            closeModal('seating-modal');
+
+            const banner = document.getElementById('editor-mode-banner');
+            const title = document.getElementById('editor-mode-title');
+            const desc = document.getElementById('editor-mode-desc');
+            const icon = document.getElementById('editor-mode-icon');
+            if (banner) {
+                icon.innerText = '⇄';
+                title.innerText = 'EDITOR SEAT ALLOCATION MOVE MODE';
+                const countDesc = activeBooking.is_full_table ? 'Full Table (8 Seats)' : `${ids.length} Seat(s)`;
+                desc.innerText = `Moving "${activeBooking.name}" (${countDesc} from Table ${activeBooking.table_number}) — Click any target Table (1–130) on the map!`;
+                banner.classList.add('active');
+            }
+            showToast(`Click any target Table (1–130) on the map to move ${activeBooking.name}!`, 'success');
+        }
+
+        async function executeEditorTransferToActiveTable() {
+            if (!editorTransferState || !activeTable) return;
+
+            if (editorTransferState.mode === 'v2_move') {
+                const chosenSeats = [...selectedSeats].sort((a, b) => a - b);
+                await performMoveAllocation(editorTransferState.ids, activeTable, chosenSeats);
+            } else if (editorTransferState.mode === 'v1_import') {
+                const g = editorTransferState.v1Group;
+                const chosenSeats = [...selectedSeats].sort((a, b) => a - b);
+                showLoader(`Assigning ${g.name} to Table ${activeTable}...`);
+                try {
+                    const res = await fetch('/api/v2/import-from-base', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            v1_ids: g.ids,
+                            table_number: activeTable,
+                            is_full_table: g.is_full_table && chosenSeats.length === 0,
+                            seat_numbers: chosenSeats
+                        })
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.success) {
+                        cancelEditorMode();
+                        closeModal('seating-modal');
+                        showToast(data.message, 'success');
+                        await fetchBookingsAndRender();
+                    } else {
+                        showToast(data.message || 'Failed to assign booking.', 'error');
+                    }
+                } catch (err) {
+                    showToast('Error assigning V1 booking.', 'error');
+                } finally {
+                    hideLoader();
+                }
+            }
+        }
+
+        async function performMoveAllocation(reservationIds, targetTable, targetSeatNumbers = []) {
+            showLoader(`Moving seat allocation to Table ${targetTable}...`);
+            try {
+                const res = await fetch('/api/v2/move-allocation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        reservation_ids: reservationIds,
+                        target_table_number: targetTable,
+                        target_seat_numbers: targetSeatNumbers
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    cancelEditorMode();
+                    closeModal('seating-modal');
+                    showToast(data.message, 'success');
+                    await fetchBookingsAndRender();
+                } else {
+                    showToast(data.message || 'Move failed.', 'error');
+                }
+            } catch (err) {
+                showToast('Error moving seat allocation.', 'error');
+            } finally {
+                hideLoader();
+            }
         }
 
         function openTemporaryHoldModal(mode) {
@@ -2338,15 +3086,21 @@
                 const tableLabel = isSeated ? `Table ${b.table_number}` : `${(b.side || 'left').toUpperCase()} Standing`;
                 const seatLabel = isSeated ? (b.is_full_table ? 'Full Table (8 Seats)' : `Seat ${b.seat_number}`) : 'Standing';
 
+                const moveBtn = (IS_EDITOR && isSeated)
+                    ? `<button onclick="openSeatForMove('${b.id}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: linear-gradient(135deg, #00f2fe, #4facfe); color: #07050d; font-weight: 800; margin-right: 6px; width: auto;" title="Move / Reallocate Seat">⇄ Move</button>`
+                    : '';
+
                 const actionsHtml = isTemp
-                    ? `<button onclick="openMakePermanentModal('${b.id}')" class="btn-primary" style="padding: 4px 10px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 800; margin-right: 6px; width: auto;">✨ Make Permanent</button>
+                    ? `${moveBtn}<button onclick="openMakePermanentModal('${b.id}')" class="btn-primary" style="padding: 4px 10px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 800; margin-right: 6px; width: auto;">✨ Make Permanent</button>
                        <button onclick="confirmDeleteBooking('${b.id}')" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">Release</button>`
-                    : `<button onclick="copyCustomerSeatUrl('${encodeURIComponent(b.ticket_number)}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 700; margin-right: 6px; width: auto;">🔗 Copy Link</button>
+                    : `${moveBtn}<button onclick="copyCustomerSeatUrl('${encodeURIComponent(b.ticket_number)}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 700; margin-right: 6px; width: auto;">🔗 Copy Link</button>
                        <button onclick="confirmDeleteBooking('${b.id}')" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem;">Delete</button>`;
+
+                const catLabel = b.category === 'platinum' ? 'vip' : b.category;
 
                 row.innerHTML = `
                     <td>${date}</td>
-                    <td><span class="category-badge badge-${b.category}">${b.category}</span></td>
+                    <td><span class="category-badge badge-${b.category}">${catLabel}</span></td>
                     <td>${statusBadge}</td>
                     <td>${escapeModalHtml(tableLabel)}</td>
                     <td>${escapeModalHtml(seatLabel)}</td>
@@ -2357,6 +3111,13 @@
                 `;
                 container.appendChild(row);
             });
+        }
+
+        function openSeatForMove(bookingId) {
+            const b = reservationsList.find(r => String(r.id) === String(bookingId));
+            if (!b || !b.table_number) return;
+            openSeatingModal(b.category, parseInt(b.table_number, 10));
+            showBubble(b);
         }
 
         function copyCustomerSeatUrl(ticketNumber) {
@@ -2384,10 +3145,118 @@
             }
         }
 
-        function handleV2Search(val) {
-            currentSearch = val || '';
+        const BASE_MAP_WIDTH = 880;
+        let currentScale = 1;
+        let fitScale = 1;
+
+        function computeFitScale() {
+            const viewport = document.getElementById('v2-zoom-viewport');
+            if (!viewport) return 1;
+            const availW = Math.max(280, viewport.clientWidth - 4);
+            return Math.min(1, availW / BASE_MAP_WIDTH);
+        }
+
+        function fitMapToViewport() {
+            fitScale = computeFitScale();
+            currentScale = fitScale;
+            applyMapScale(true);
+        }
+
+        function stepMapZoom(delta) {
+            fitScale = computeFitScale();
+            const minScale = Math.min(0.35, fitScale);
+            currentScale = Math.min(2.0, Math.max(minScale, +(currentScale + delta).toFixed(2)));
+            applyMapScale(false);
+        }
+
+        function setMapZoomFromSlider(pctVal) {
+            currentScale = Math.min(2.0, Math.max(0.35, parseInt(pctVal, 10) / 100));
+            applyMapScale(false);
+        }
+
+        function applyMapScale(isFitMode = false) {
+            const canvas = document.getElementById('v2-zoom-canvas');
+            const sizer = document.getElementById('v2-zoom-sizer');
+            const label = document.getElementById('map-zoom-label');
+            const slider = document.getElementById('map-zoom-slider');
+            if (!canvas || !sizer) return;
+
+            canvas.style.transform = `scale(${currentScale})`;
+            const naturalH = canvas.offsetHeight || 1100;
+            sizer.style.width = `${Math.round(BASE_MAP_WIDTH * currentScale)}px`;
+            sizer.style.height = `${Math.round(naturalH * currentScale)}px`;
+
+            const pct = Math.round(currentScale * 100);
+            if (slider) slider.value = pct;
+            if (label) {
+                label.innerText = (isFitMode || Math.abs(currentScale - fitScale) < 0.02)
+                    ? `Fit (${pct}%)`
+                    : `${pct}%`;
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            const newFit = computeFitScale();
+            if (Math.abs(currentScale - fitScale) < 0.03) {
+                fitScale = newFit;
+                currentScale = newFit;
+                applyMapScale(true);
+            } else {
+                fitScale = newFit;
+                applyMapScale(false);
+            }
+        });
+
+        function executeV2Search() {
+            const input = document.getElementById('v2-search-input');
+            currentSearch = (input ? input.value : '').trim();
+            renderGrids();
+
+            const clearBtn = document.getElementById('v2-search-clear-btn');
+            const matchBadge = document.getElementById('v2-search-match-badge');
+
+            if (currentSearch.length > 0) {
+                if (clearBtn) clearBtn.style.display = 'inline-block';
+                const matchedEls = document.querySelectorAll('.table-btn.search-matched-table');
+                if (matchBadge) {
+                    matchBadge.style.display = 'inline-block';
+                    matchBadge.innerText = `${matchedEls.length} table(s) matched`;
+                }
+                if (matchedEls.length > 0) {
+                    matchedEls[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    showToast(`No table or booking found matching "${currentSearch}"`, 'error');
+                }
+            } else {
+                if (clearBtn) clearBtn.style.display = 'none';
+                if (matchBadge) matchBadge.style.display = 'none';
+            }
+        }
+
+        function clearV2Search() {
+            const input = document.getElementById('v2-search-input');
+            if (input) input.value = '';
+            currentSearch = '';
+            const clearBtn = document.getElementById('v2-search-clear-btn');
+            const matchBadge = document.getElementById('v2-search-match-badge');
+            if (clearBtn) clearBtn.style.display = 'none';
+            if (matchBadge) matchBadge.style.display = 'none';
             renderGrids();
         }
+
+        // Hide top navigation header when scrolling down, show when back near top
+        let lastScrollY = window.scrollY;
+        window.addEventListener('scroll', () => {
+            const hdr = document.querySelector('header');
+            if (!hdr) return;
+            const currentY = window.scrollY;
+            if (currentY > 40 && currentY > lastScrollY) {
+                hdr.classList.add('header-hidden');
+            } else if (currentY <= 30 || currentY < lastScrollY - 15) {
+                hdr.classList.remove('header-hidden');
+            }
+            lastScrollY = currentY;
+        }, { passive: true });
 
         function openModal(id) {
             document.getElementById(id).classList.add('active');

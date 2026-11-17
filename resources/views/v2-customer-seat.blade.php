@@ -43,6 +43,12 @@
             position: sticky;
             top: 0;
             z-index: 100;
+            transition: transform 0.3s ease, opacity 0.25s ease;
+        }
+        .brand-nav.header-hidden {
+            transform: translateY(-110%);
+            opacity: 0;
+            pointer-events: none;
         }
         .brand-logo {
             font-family: 'Cinzel', serif;
@@ -244,6 +250,82 @@
             letter-spacing: 0.12em;
             font-size: 0.82rem;
         }
+        .v2-grid-scroll-wrap {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+        }
+        .map-zoom-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0 auto 14px;
+            padding: 8px 12px;
+            background: rgba(14, 11, 23, 0.9);
+            border: 1px solid var(--border-gold);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+            position: sticky;
+            top: 10px;
+            z-index: 40;
+            backdrop-filter: blur(10px);
+        }
+        .zoom-ctrl-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(212, 175, 55, 0.45);
+            color: var(--gold-primary);
+            padding: 6px 12px;
+            border-radius: 14px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+            touch-action: manipulation;
+        }
+        .zoom-ctrl-btn:hover, .zoom-ctrl-btn:active {
+            background: var(--gold-gradient);
+            color: #07050d;
+        }
+        .zoom-slider {
+            width: 100px;
+            accent-color: var(--gold-primary);
+            cursor: pointer;
+        }
+        .zoom-level-badge {
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: #00f2fe;
+            min-width: 64px;
+            text-align: center;
+            font-family: monospace;
+        }
+        .map-zoom-viewport {
+            width: 100%;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+        }
+        .map-zoom-sizer {
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+        .map-zoom-canvas {
+            width: 860px;
+            transform-origin: top left;
+            transition: transform 0.15s ease-out;
+        }
+        @media (max-width: 768px) {
+            .arena-card { padding: 14px 8px; }
+            .map-zoom-controls { padding: 6px 8px; gap: 6px; border-radius: 16px; }
+            .zoom-ctrl-btn { padding: 5px 9px; font-size: 0.72rem; }
+            .zoom-slider { width: 80px; }
+        }
     </style>
 </head>
 <body>
@@ -296,77 +378,171 @@
         @endphp
 
         <div class="arena-card">
-            <div class="stage-container">
-                <div class="stage-banner">
-                    <div class="stage-title">♠ STAGE (66 FT) ♠</div>
-                    <div class="stage-subtitle">KALABARA LIVE • WATERS EDGE</div>
-                </div>
+            <div class="map-zoom-controls">
+                <button type="button" class="zoom-ctrl-btn" onclick="stepCustZoom(-0.15)">➖ Zoom Out</button>
+                <input type="range" id="cust-zoom-slider" class="zoom-slider" min="35" max="200" value="100" oninput="setCustZoomFromSlider(this.value)">
+                <span class="zoom-level-badge" id="cust-zoom-label">Fit</span>
+                <button type="button" class="zoom-ctrl-btn" onclick="fitCustMapToViewport()">📐 Fit</button>
+                <button type="button" class="zoom-ctrl-btn" onclick="stepCustZoom(0.15)">➕ Zoom In</button>
             </div>
 
-            <!-- VIP Section: Rows 1 - 5 (Tables 1 - 50) -->
-            <div class="category-section">
-                <div class="category-section-title platinum-section-title">
-                    ♠ VIP (Tables 1 - 50 • Rows 1 - 5)
-                </div>
-                <div class="v2-col-headers">
-                    <div></div>
-                    @for ($c = 1; $c <= 10; $c++)
-                        <div class="v2-axis-badge">{{ $c }}</div>
-                    @endfor
-                </div>
-                @for ($r = 1; $r <= 5; $r++)
-                    <div class="v2-grid-row">
-                        <div class="v2-axis-badge">{{ $r }}</div>
-                        @for ($c = 1; $c <= 10; $c++)
-                            @php $tNum = (($r - 1) * 10) + $c; @endphp
-                            <div class="table-btn {{ $myTable === $tNum ? 'my-table' : '' }}">
-                                {{ $tNum }}
-                            </div>
-                        @endfor
+            <div class="map-zoom-viewport" id="cust-zoom-viewport">
+                <div class="map-zoom-sizer" id="cust-zoom-sizer">
+                    <div class="map-zoom-canvas" id="cust-zoom-canvas">
+                    <div class="stage-container">
+                        <div class="stage-banner">
+                            <div class="stage-title">♠ STAGE (66 FT) ♠</div>
+                            <div class="stage-subtitle">KALABARA LIVE • WATERS EDGE</div>
+                        </div>
                     </div>
-                @endfor
-            </div>
 
-            <!-- Gold Section: Rows 6 - 13 (Tables 51 - 130) -->
-            <div class="category-section">
-                <div class="category-section-title gold-section-title">
-                    ♥ GOLD (Tables 51 - 130 • Rows 6 - 13)
-                </div>
-                <div class="v2-col-headers">
-                    <div></div>
-                    @for ($c = 1; $c <= 10; $c++)
-                        <div class="v2-axis-badge">{{ $c }}</div>
-                    @endfor
-                </div>
-                @for ($r = 6; $r <= 13; $r++)
-                    <div class="v2-grid-row">
-                        <div class="v2-axis-badge">{{ $r }}</div>
-                        @for ($c = 1; $c <= 10; $c++)
-                            @php $tNum = (($r - 1) * 10) + $c; @endphp
-                            <div class="table-btn {{ $myTable === $tNum ? 'my-table' : '' }}">
-                                {{ $tNum }}
+                    <!-- VIP Section: Rows 1 - 5 (Tables 1 - 50) -->
+                    <div class="category-section">
+                        <div class="category-section-title platinum-section-title">
+                            ♠ VIP (Tables 1 - 50 • Rows 1 - 5)
+                        </div>
+                        <div class="v2-grid-scroll-wrap">
+                            <div class="v2-col-headers">
+                                <div></div>
+                                @for ($c = 1; $c <= 10; $c++)
+                                    <div class="v2-axis-badge">{{ $c }}</div>
+                                @endfor
                             </div>
-                        @endfor
+                            @for ($r = 1; $r <= 5; $r++)
+                                <div class="v2-grid-row">
+                                    <div class="v2-axis-badge">{{ $r }}</div>
+                                    @for ($c = 1; $c <= 10; $c++)
+                                        @php $tNum = (($r - 1) * 10) + $c; @endphp
+                                        <div class="table-btn {{ $myTable === $tNum ? 'my-table' : '' }}">
+                                            {{ $tNum }}
+                                        </div>
+                                    @endfor
+                                </div>
+                            @endfor
+                        </div>
                     </div>
-                @endfor
-            </div>
 
-            <!-- Bottom Section: Left Standing | FOH + Entrance | Right Standing -->
-            <div class="v2-bottom-layout">
-                <div class="standing-box {{ ($customerInfo && $customerInfo['category'] === 'standing' && $customerInfo['side'] === 'left') ? 'my-standing' : '' }}">
-                    <div style="font-size:1.5rem;color:#c77dff;margin-bottom:6px;">♣</div>
-                    <h3 style="color:#e0aaff;font-size:0.95rem;text-transform:uppercase;">Left Standing Area</h3>
-                </div>
-                <div class="foh-entrance-card">
-                    <div class="foh-block">FOH</div>
-                    <div class="entrance-block"><span style="color:var(--gold-primary);">⬆</span> ENTRANCE</div>
-                </div>
-                <div class="standing-box {{ ($customerInfo && $customerInfo['category'] === 'standing' && $customerInfo['side'] === 'right') ? 'my-standing' : '' }}">
-                    <div style="font-size:1.5rem;color:#c77dff;margin-bottom:6px;">♥</div>
-                    <h3 style="color:#e0aaff;font-size:0.95rem;text-transform:uppercase;">Right Standing Area</h3>
+                    <!-- Gold Section: Rows 6 - 13 (Tables 51 - 130) -->
+                    <div class="category-section">
+                        <div class="category-section-title gold-section-title">
+                            ♥ GOLD (Tables 51 - 130 • Rows 6 - 13)
+                        </div>
+                        <div class="v2-grid-scroll-wrap">
+                            <div class="v2-col-headers">
+                                <div></div>
+                                @for ($c = 1; $c <= 10; $c++)
+                                    <div class="v2-axis-badge">{{ $c }}</div>
+                                @endfor
+                            </div>
+                            @for ($r = 6; $r <= 13; $r++)
+                                <div class="v2-grid-row">
+                                    <div class="v2-axis-badge">{{ $r }}</div>
+                                    @for ($c = 1; $c <= 10; $c++)
+                                        @php $tNum = (($r - 1) * 10) + $c; @endphp
+                                        <div class="table-btn {{ $myTable === $tNum ? 'my-table' : '' }}">
+                                            {{ $tNum }}
+                                        </div>
+                                    @endfor
+                                </div>
+                            @endfor
+                        </div>
+                    </div>
+
+                    <!-- Bottom Section: Left Standing | FOH + Entrance | Right Standing -->
+                    <div class="v2-bottom-layout">
+                        <div class="standing-box {{ ($customerInfo && $customerInfo['category'] === 'standing' && $customerInfo['side'] === 'left') ? 'my-standing' : '' }}">
+                            <div style="font-size:1.5rem;color:#c77dff;margin-bottom:6px;">♣</div>
+                            <h3 style="color:#e0aaff;font-size:0.95rem;text-transform:uppercase;">Left Standing Area</h3>
+                        </div>
+                        <div class="foh-entrance-card">
+                            <div class="foh-block">FOH</div>
+                            <div class="entrance-block"><span style="color:var(--gold-primary);">⬆</span> ENTRANCE</div>
+                        </div>
+                        <div class="standing-box {{ ($customerInfo && $customerInfo['category'] === 'standing' && $customerInfo['side'] === 'right') ? 'my-standing' : '' }}">
+                            <div style="font-size:1.5rem;color:#c77dff;margin-bottom:6px;">♥</div>
+                            <h3 style="color:#e0aaff;font-size:0.95rem;text-transform:uppercase;">Right Standing Area</h3>
+                        </div>
+                    </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        const CUST_BASE_WIDTH = 860;
+        let custScale = 1;
+        let custFitScale = 1;
+
+        function computeCustFitScale() {
+            const vp = document.getElementById('cust-zoom-viewport');
+            if (!vp) return 1;
+            return Math.min(1, Math.max(280, vp.clientWidth - 4) / CUST_BASE_WIDTH);
+        }
+
+        function fitCustMapToViewport() {
+            custFitScale = computeCustFitScale();
+            custScale = custFitScale;
+            applyCustScale(true);
+        }
+
+        function stepCustZoom(delta) {
+            custFitScale = computeCustFitScale();
+            const minS = Math.min(0.35, custFitScale);
+            custScale = Math.min(2.0, Math.max(minS, +(custScale + delta).toFixed(2)));
+            applyCustScale(false);
+        }
+
+        function setCustZoomFromSlider(pctVal) {
+            custScale = Math.min(2.0, Math.max(0.35, parseInt(pctVal, 10) / 100));
+            applyCustScale(false);
+        }
+
+        function applyCustScale(isFit = false) {
+            const canvas = document.getElementById('cust-zoom-canvas');
+            const sizer = document.getElementById('cust-zoom-sizer');
+            const label = document.getElementById('cust-zoom-label');
+            const slider = document.getElementById('cust-zoom-slider');
+            if (!canvas || !sizer) return;
+
+            canvas.style.transform = `scale(${custScale})`;
+            const naturalH = canvas.offsetHeight || 1050;
+            sizer.style.width = `${Math.round(CUST_BASE_WIDTH * custScale)}px`;
+            sizer.style.height = `${Math.round(naturalH * custScale)}px`;
+
+            const pct = Math.round(custScale * 100);
+            if (slider) slider.value = pct;
+            if (label) {
+                label.innerText = (isFit || Math.abs(custScale - custFitScale) < 0.02) ? `Fit (${pct}%)` : `${pct}%`;
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', fitCustMapToViewport);
+        window.addEventListener('load', fitCustMapToViewport);
+        window.addEventListener('resize', () => {
+            const newFit = computeCustFitScale();
+            if (Math.abs(custScale - custFitScale) < 0.03) {
+                custFitScale = newFit;
+                custScale = newFit;
+                applyCustScale(true);
+            } else {
+                custFitScale = newFit;
+                applyCustScale(false);
+            }
+        });
+
+        let lastScrollY = window.scrollY;
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('.brand-nav');
+            if (!nav) return;
+            const currentY = window.scrollY;
+            if (currentY > 40 && currentY > lastScrollY) {
+                nav.classList.add('header-hidden');
+            } else if (currentY <= 30 || currentY < lastScrollY - 15) {
+                nav.classList.remove('header-hidden');
+            }
+            lastScrollY = currentY;
+        }, { passive: true });
+    </script>
 </body>
 </html>

@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
     public function showLogin()
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return redirect()->route('v2.dashboard');
         }
         return view('auth.login');
     }
@@ -22,9 +24,12 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
+        // Ensure the configured Main Admin and Editor accounts exist with their exact credentials
+        $this->ensureConfiguredAccountsExist();
+
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            return redirect()->intended('dashboard');
+            return redirect()->route('v2.dashboard');
         }
 
         return back()->withErrors([
@@ -38,5 +43,32 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect()->route('login');
+    }
+
+    private function ensureConfiguredAccountsExist(): void
+    {
+        try {
+            // Main Admin Login: kalabara@gmail.com / kalabara@edge
+            $mainUser = User::where('email', 'kalabara@gmail.com')->first();
+            if (!$mainUser) {
+                User::create([
+                    'name' => 'Kalabara Admin',
+                    'email' => 'kalabara@gmail.com',
+                    'password' => Hash::make('kalabara@edge'),
+                ]);
+            }
+
+            // Editor Login: editor2026.kalabara@gmail.com / kalabara@2026
+            $editorUser = User::where('email', 'editor2026.kalabara@gmail.com')->first();
+            if (!$editorUser) {
+                User::create([
+                    'name' => 'Kalabara Editor',
+                    'email' => 'editor2026.kalabara@gmail.com',
+                    'password' => Hash::make('kalabara@2026'),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // Ignore if DB is not migrated yet
+        }
     }
 }

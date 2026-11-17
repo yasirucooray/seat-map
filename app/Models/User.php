@@ -43,4 +43,12 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Check if the authenticated user is the Editor account allowed to move seat allocations.
+     */
+    public function isEditor(): bool
+    {
+        return strtolower(trim((string)$this->email)) === 'editor2026.kalabara@gmail.com';
+    }
 }

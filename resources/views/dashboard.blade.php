@@ -194,6 +194,12 @@
             top: 0;
             z-index: 100;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+            transition: transform 0.3s ease, opacity 0.25s ease;
+        }
+        header.header-hidden {
+            transform: translateY(-110%);
+            opacity: 0;
+            pointer-events: none;
         }
 
         .header-brand {
@@ -1635,16 +1641,19 @@
 
         <!-- Main Arena Booking Card -->
         <div class="arena-card" id="arena-main-card">
-            <!-- Arena Command Toolbar: Real-Time Universal Search -->
+            <!-- Arena Command Toolbar: Button-Triggered Universal Search -->
             <div class="arena-toolbar">
-                <div class="arena-search-box">
+                <form class="arena-search-box" onsubmit="event.preventDefault(); handleSeatSearch(document.getElementById('seat-search-input').value);" style="max-width: 680px;">
                     <div class="search-input-group">
                         <span class="search-glass-icon">🔍</span>
                         <input type="text" id="seat-search-input" class="seat-search-input" 
                                placeholder="Search guest name, email, order no (e.g. Prabath, ORDMQ...)..." 
-                               oninput="handleSeatSearch(this.value)" autocomplete="off" />
+                               autocomplete="off" />
                         <button type="button" class="search-clear-btn" id="search-clear-btn" onclick="clearSeatSearch()" title="Clear search" style="display:none;">&times;</button>
                     </div>
+                    <button type="submit" class="btn-primary" style="width: auto; padding: 10px 18px; font-size: 0.84rem; border-radius: 20px; white-space: nowrap;">
+                        🔍 Search
+                    </button>
 
                     <div class="search-status-bar" id="search-status-bar" style="display:none;">
                         <span class="search-match-count" id="search-match-count">0 found</span>
@@ -1654,7 +1663,7 @@
                             <button type="button" class="search-step-btn" onclick="stepSearchMatch(1)" title="Next match">&rsaquo;</button>
                         </div>
                     </div>
-                </div>
+                </form>
             </div>
 
             <!-- Search Results Dropdown Tray -->
@@ -3138,6 +3147,19 @@
                 prompt("Copy customer seat locator link:", input.value);
             }
         }
+
+        let lastScrollY = window.scrollY;
+        window.addEventListener('scroll', () => {
+            const hdr = document.querySelector('header');
+            if (!hdr) return;
+            const currentY = window.scrollY;
+            if (currentY > 40 && currentY > lastScrollY) {
+                hdr.classList.add('header-hidden');
+            } else if (currentY <= 30 || currentY < lastScrollY - 15) {
+                hdr.classList.remove('header-hidden');
+            }
+            lastScrollY = currentY;
+        }, { passive: true });
 
         document.addEventListener('DOMContentLoaded', () => {
             renderGrids();
