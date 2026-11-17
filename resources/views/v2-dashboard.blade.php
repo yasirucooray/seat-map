@@ -360,7 +360,7 @@
             position: sticky;
             top: 78px;
             z-index: 90;
-            background: linear-gradient(135deg, rgba(0, 242, 254, 0.2) 0%, rgba(16, 185, 129, 0.22) 100%);
+            background: #0d1e26;
             border: 2px solid #00f2fe;
             border-radius: 16px;
             padding: 14px 20px;
@@ -370,8 +370,7 @@
             justify-content: space-between;
             gap: 14px;
             flex-wrap: wrap;
-            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.75), 0 0 25px rgba(0, 242, 254, 0.35);
-            backdrop-filter: blur(14px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
         }
         .editor-mode-banner.active {
             display: flex;
@@ -1941,11 +1940,14 @@
                 renderGrids();
                 updateStats();
                 reloadRecentBookingsTable();
-                fetchBaseBookings();
+                if (IS_EDITOR) {
+                    fetchBaseBookings();
+                }
             }
         }
 
         async function fetchBaseBookings() {
+            if (!IS_EDITOR) return;
             try {
                 const res = await fetch('/api/v2/base-bookings');
                 if (res.ok) {
@@ -1954,7 +1956,10 @@
                     const unassignedCount = baseGroupsList.filter(g => !g.already_on_v2).length;
                     const badge = document.getElementById('v1-unassigned-badge');
                     if (badge) badge.innerText = unassignedCount;
-                    renderV1ImportList();
+                    const drawer = document.getElementById('v1-import-drawer');
+                    if (drawer && drawer.classList.contains('active')) {
+                        renderV1ImportList();
+                    }
                 }
             } catch (err) {
                 console.error('Error fetching base V1 bookings:', err);
@@ -1964,11 +1969,18 @@
         function toggleV1ImportDrawer() {
             const drawer = document.getElementById('v1-import-drawer');
             if (!drawer) return;
+            const willBeActive = !drawer.classList.contains('active');
             drawer.classList.toggle('active');
-            if (drawer.classList.contains('active')) {
-                fetchBaseBookings();
+            if (willBeActive) {
+                if (baseGroupsList.length === 0) {
+                    fetchBaseBookings();
+                } else {
+                    renderV1ImportList();
+                }
             }
         }
+
+        let v1DisplayLimit = 30;
 
         function renderV1ImportList() {
             const grid = document.getElementById('v1-cards-grid');
@@ -1991,8 +2003,11 @@
                 return;
             }
 
+            const toShow = filtered.slice(0, v1DisplayLimit);
             grid.innerHTML = '';
-            filtered.forEach(g => {
+            const fragment = document.createDocumentFragment();
+
+            toShow.forEach(g => {
                 const card = document.createElement('div');
                 card.className = 'v1-booking-card' + (g.already_on_v2 ? ' already-placed' : '');
 
@@ -2008,16 +2023,16 @@
                 if (g.category === 'standing') {
                     actionControls = `
                         <div style="display:flex;gap:6px;margin-top:4px;">
-                            <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.75rem;width:auto;flex:1;" onclick='importStandingV1(${JSON.stringify(g.ids)}, "left")'>⚡ Add to Left Standing</button>
-                            <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.75rem;width:auto;flex:1;" onclick='importStandingV1(${JSON.stringify(g.ids)}, "right")'>⚡ Add to Right Standing</button>
+                            <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.75rem;width:auto;flex:1;" onclick="importStandingV1ById(${g.primary_id}, 'left')">⚡ Add to Left Standing</button>
+                            <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.75rem;width:auto;flex:1;" onclick="importStandingV1ById(${g.primary_id}, 'right')">⚡ Add to Right Standing</button>
                         </div>
                     `;
                 } else {
                     actionControls = `
                         <div style="display:flex;gap:6px;align-items:center;margin-top:4px;">
                             <input type="number" id="v1-target-tbl-${g.primary_id}" min="1" max="130" placeholder="V2 Table (1-130)" style="width:125px;background:rgba(7,5,13,0.9);border:1px solid var(--border-gold);border-radius:8px;padding:6px 8px;color:#fff;font-size:0.78rem;">
-                            <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.76rem;width:auto;" onclick='quickImportV1ToTable(${JSON.stringify(g.ids)}, ${g.primary_id}, ${g.is_full_table ? "true" : "false"})'>⚡ Assign</button>
-                            <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.76rem;width:auto;background:rgba(0,242,254,0.16);border:1px solid #00f2fe;color:#00f2fe;box-shadow:none;" onclick='startPlaceV1OnMap(${JSON.stringify(g).replace(/'/g, "&#39;")})'>📌 Pick on Map</button>
+                            <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.76rem;width:auto;" onclick="quickImportV1ToTableById(${g.primary_id})">⚡ Assign</button>
+                            <button type="button" class="btn-primary" style="padding:6px 10px;font-size:0.76rem;width:auto;background:rgba(0,242,254,0.16);border:1px solid #00f2fe;color:#00f2fe;box-shadow:none;" onclick="startPlaceV1OnMapById(${g.primary_id})">📌 Pick on Map</button>
                         </div>
                     `;
                 }
@@ -2036,11 +2051,24 @@
                     </div>
                     ${actionControls}
                 `;
-                grid.appendChild(card);
+                fragment.appendChild(card);
             });
+
+            grid.appendChild(fragment);
+
+            if (filtered.length > v1DisplayLimit) {
+                const moreBtn = document.createElement('div');
+                moreBtn.style.gridColumn = '1 / -1';
+                moreBtn.style.textAlign = 'center';
+                moreBtn.style.padding = '10px';
+                moreBtn.innerHTML = `<button type="button" class="btn-primary" style="width:auto;padding:8px 20px;border-radius:20px;" onclick="v1DisplayLimit += 30; renderV1ImportList();">Load More (${filtered.length - v1DisplayLimit} remaining)</button>`;
+                grid.appendChild(moreBtn);
+            }
         }
 
-        async function importStandingV1(v1Ids, side) {
+        async function importStandingV1ById(primaryId, side) {
+            const groupObj = baseGroupsList.find(g => g.primary_id === primaryId);
+            if (!groupObj) return;
             showLoader('Importing standing booking from Base Map...');
             try {
                 const res = await fetch('/api/v2/import-from-base', {
@@ -2051,7 +2079,7 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({
-                        v1_ids: v1Ids,
+                        v1_ids: groupObj.ids,
                         target_category: 'standing',
                         side: side
                     })
@@ -2070,7 +2098,9 @@
             }
         }
 
-        async function quickImportV1ToTable(v1Ids, primaryId, isFullTable) {
+        async function quickImportV1ToTableById(primaryId) {
+            const groupObj = baseGroupsList.find(g => g.primary_id === primaryId);
+            if (!groupObj) return;
             const input = document.getElementById(`v1-target-tbl-${primaryId}`);
             const tbl = parseInt(input?.value || '0', 10);
             if (!tbl || tbl < 1 || tbl > 130) {
@@ -2088,9 +2118,9 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({
-                        v1_ids: v1Ids,
+                        v1_ids: groupObj.ids,
                         table_number: tbl,
-                        is_full_table: isFullTable
+                        is_full_table: Boolean(groupObj.is_full_table)
                     })
                 });
                 const data = await res.json();
@@ -2107,7 +2137,9 @@
             }
         }
 
-        function startPlaceV1OnMap(groupObj) {
+        function startPlaceV1OnMapById(primaryId) {
+            const groupObj = baseGroupsList.find(g => g.primary_id === primaryId);
+            if (!groupObj) return;
             editorTransferState = {
                 mode: 'v1_import',
                 v1Group: groupObj
@@ -2122,7 +2154,10 @@
                 const seatInfo = groupObj.is_full_table ? 'Full Table (8 Seats)' : `${groupObj.seat_count} Seat(s)`;
                 desc.innerText = `Placing "${groupObj.name}" (${seatInfo} from V1 ${groupObj.v1_location}) — Click any Table (1–130) below!`;
                 banner.classList.add('active');
-                banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            const drawer = document.getElementById('v1-import-drawer');
+            if (drawer && drawer.classList.contains('active')) {
+                drawer.classList.remove('active');
             }
             showToast(`Click any Table (1–130) on the map to place ${groupObj.name}!`, 'success');
         }
@@ -2141,15 +2176,23 @@
         }
 
         function renderGrids() {
+            cachedCanvasNaturalH = 0;
             // VIP: Rows 1 - 5 (Tables 1 - 50)
             renderRowsSection('platinum', 1, 5, 'platinum-v2-rows');
             // Gold: Rows 6 - 13 (Tables 51 - 130)
             renderRowsSection('gold', 6, 13, 'gold-v2-rows');
 
-            const leftPerm = reservationsList.filter(r => r.category === 'standing' && r.side === 'left' && !r.is_temporary).length;
-            const leftTemp = reservationsList.filter(r => r.category === 'standing' && r.side === 'left' && r.is_temporary).length;
-            const rightPerm = reservationsList.filter(r => r.category === 'standing' && r.side === 'right' && !r.is_temporary).length;
-            const rightTemp = reservationsList.filter(r => r.category === 'standing' && r.side === 'right' && r.is_temporary).length;
+            let leftPerm = 0, leftTemp = 0, rightPerm = 0, rightTemp = 0;
+            for (let i = 0; i < reservationsList.length; i++) {
+                const r = reservationsList[i];
+                if (r.category === 'standing') {
+                    if (r.side === 'left') {
+                        if (r.is_temporary) leftTemp++; else leftPerm++;
+                    } else if (r.side === 'right') {
+                        if (r.is_temporary) rightTemp++; else rightPerm++;
+                    }
+                }
+            }
 
             const leftEl = document.getElementById('left-standing-count');
             if (leftEl) leftEl.innerText = leftTemp > 0 ? `${leftPerm} Sold • ${leftTemp} Temp (Click to reserve)` : `${leftPerm} Sold (Click to reserve)`;
@@ -2171,6 +2214,19 @@
 
             const q = currentSearch.trim().toLowerCase();
 
+            // Pre-index reservations by table_number for O(1) instant lookup
+            const bookingsByTable = {};
+            for (let i = 0; i < reservationsList.length; i++) {
+                const r = reservationsList[i];
+                if (r.category !== 'standing' && r.table_number) {
+                    const t = r.table_number;
+                    if (!bookingsByTable[t]) bookingsByTable[t] = [];
+                    bookingsByTable[t].push(r);
+                }
+            }
+
+            const fragment = document.createDocumentFragment();
+
             for (let row = startRow; row <= endRow; row++) {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'v2-grid-row';
@@ -2191,20 +2247,29 @@
                     btn.className = 'table-btn';
                     btn.id = `table-btn-${tableNum}`;
 
-                    const bookingsForTable = reservationsList.filter(r =>
-                        r.category !== 'standing' &&
-                        parseInt(r.table_number, 10) === tableNum
-                    );
+                    const bookingsForTable = bookingsByTable[tableNum] || [];
 
-                    const isFull = bookingsForTable.some(r => r.is_full_table);
+                    let hasTemp = false;
+                    let hasCheckedInSeated = false;
+                    let hasPermanent = false;
+                    let isFull = false;
+
+                    for (let j = 0; j < bookingsForTable.length; j++) {
+                        const b = bookingsForTable[j];
+                        if (b.is_full_table) isFull = true;
+                        if (b.is_temporary) {
+                            hasTemp = true;
+                        } else {
+                            hasPermanent = true;
+                            if (b.is_checked_in) hasCheckedInSeated = true;
+                        }
+                    }
+
                     const bookedSeatsCount = bookingsForTable.length;
-                    const hasTemp = bookingsForTable.some(r => Boolean(r.is_temporary));
-                    const allTemp = bookingsForTable.length > 0 && bookingsForTable.every(r => Boolean(r.is_temporary));
-                    const hasCheckedInSeated = bookingsForTable.some(r => Boolean(r.is_checked_in) && !r.is_temporary);
 
-                    if (allTemp) {
+                    if (bookedSeatsCount > 0 && !hasPermanent && hasTemp) {
                         btn.classList.add('temporary-reserved');
-                        btn.title = `Table ${tableNum} • Temporarily Reserved: ` + [...new Set(bookingsForTable.map(b => b.name))].join(', ');
+                        btn.title = `Table ${tableNum} • Temporarily Reserved`;
                     } else if (isFull || bookedSeatsCount >= 8) {
                         btn.classList.add('fully-reserved');
                         if (hasTemp) btn.classList.add('has-temporary');
@@ -2222,26 +2287,28 @@
                         btn.innerText = label;
                     }
 
-                    const isMatched = q.length > 0 && (
-                        label === q ||
-                        `table ${tableNum}` === q ||
-                        `t${tableNum}` === q ||
-                        bookingsForTable.some(b =>
-                            (b.name && b.name.toLowerCase().includes(q)) ||
-                            (b.email && b.email.toLowerCase().includes(q)) ||
-                            (b.ticket_number && b.ticket_number.toLowerCase().includes(q))
-                        )
-                    );
-                    if (isMatched) {
-                        btn.classList.add('search-matched-table');
+                    if (q.length > 0) {
+                        const isMatched = label === q ||
+                            `table ${tableNum}` === q ||
+                            `t${tableNum}` === q ||
+                            bookingsForTable.some(b =>
+                                (b.name && b.name.toLowerCase().includes(q)) ||
+                                (b.email && b.email.toLowerCase().includes(q)) ||
+                                (b.ticket_number && b.ticket_number.toLowerCase().includes(q))
+                            );
+                        if (isMatched) {
+                            btn.classList.add('search-matched-table');
+                        }
                     }
 
                     btn.onclick = () => openSeatingModal(category, tableNum);
                     rowDiv.appendChild(btn);
                 }
 
-                container.appendChild(rowDiv);
+                fragment.appendChild(rowDiv);
             }
+
+            container.appendChild(fragment);
         }
 
         // Open 8-Seat Table Ring Modal (Identical to V1)
@@ -3174,6 +3241,15 @@
             applyMapScale(false);
         }
 
+        let cachedCanvasNaturalH = 0;
+        function getCanvasNaturalHeight() {
+            if (!cachedCanvasNaturalH) {
+                const canvas = document.getElementById('v2-zoom-canvas');
+                cachedCanvasNaturalH = (canvas && canvas.scrollHeight) ? canvas.scrollHeight : 1250;
+            }
+            return cachedCanvasNaturalH;
+        }
+
         function applyMapScale(isFitMode = false) {
             const canvas = document.getElementById('v2-zoom-canvas');
             const sizer = document.getElementById('v2-zoom-sizer');
@@ -3182,12 +3258,12 @@
             if (!canvas || !sizer) return;
 
             canvas.style.transform = `scale(${currentScale})`;
-            const naturalH = canvas.offsetHeight || 1100;
+            const naturalH = getCanvasNaturalHeight();
             sizer.style.width = `${Math.round(BASE_MAP_WIDTH * currentScale)}px`;
             sizer.style.height = `${Math.round(naturalH * currentScale)}px`;
 
             const pct = Math.round(currentScale * 100);
-            if (slider) slider.value = pct;
+            if (slider && slider.value != pct) slider.value = pct;
             if (label) {
                 label.innerText = (isFitMode || Math.abs(currentScale - fitScale) < 0.02)
                     ? `Fit (${pct}%)`
@@ -3195,17 +3271,23 @@
             }
         }
 
+        let resizeRaf = null;
         window.addEventListener('resize', () => {
-            const newFit = computeFitScale();
-            if (Math.abs(currentScale - fitScale) < 0.03) {
-                fitScale = newFit;
-                currentScale = newFit;
-                applyMapScale(true);
-            } else {
-                fitScale = newFit;
-                applyMapScale(false);
-            }
-        });
+            if (resizeRaf) return;
+            resizeRaf = requestAnimationFrame(() => {
+                resizeRaf = null;
+                cachedCanvasNaturalH = 0;
+                const newFit = computeFitScale();
+                if (Math.abs(currentScale - fitScale) < 0.03) {
+                    fitScale = newFit;
+                    currentScale = newFit;
+                    applyMapScale(true);
+                } else {
+                    fitScale = newFit;
+                    applyMapScale(false);
+                }
+            });
+        }, { passive: true });
 
         function executeV2Search() {
             const input = document.getElementById('v2-search-input');
@@ -3246,16 +3328,21 @@
 
         // Hide top navigation header when scrolling down, show when back near top
         let lastScrollY = window.scrollY;
+        let scrollRaf = null;
         window.addEventListener('scroll', () => {
-            const hdr = document.querySelector('header');
-            if (!hdr) return;
-            const currentY = window.scrollY;
-            if (currentY > 40 && currentY > lastScrollY) {
-                hdr.classList.add('header-hidden');
-            } else if (currentY <= 30 || currentY < lastScrollY - 15) {
-                hdr.classList.remove('header-hidden');
-            }
-            lastScrollY = currentY;
+            if (scrollRaf) return;
+            scrollRaf = requestAnimationFrame(() => {
+                scrollRaf = null;
+                const hdr = document.querySelector('header');
+                if (!hdr) return;
+                const currentY = window.scrollY;
+                if (currentY > 40 && currentY > lastScrollY) {
+                    hdr.classList.add('header-hidden');
+                } else if (currentY <= 30 || currentY < lastScrollY - 15) {
+                    hdr.classList.remove('header-hidden');
+                }
+                lastScrollY = currentY;
+            });
         }, { passive: true });
 
         function openModal(id) {

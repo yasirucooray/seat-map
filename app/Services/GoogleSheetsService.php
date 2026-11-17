@@ -24,6 +24,13 @@ class GoogleSheetsService
         $this->client->setApplicationName('Kalabara Seating');
         $this->client->setScopes([Sheets::SPREADSHEETS]);
 
+        // Set fast connect and read timeouts so slow Google API never blocks web requests indefinitely
+        $httpClient = new \GuzzleHttp\Client([
+            'connect_timeout' => 3.5,
+            'timeout' => 5.0,
+        ]);
+        $this->client->setHttpClient($httpClient);
+
         $credentialsPath = env('GOOGLE_SERVICE_ACCOUNT_JSON');
         if (! $credentialsPath) {
             $credentialsPath = storage_path('keys/potent-airfoil-399806-569635b7afda.json');
@@ -38,29 +45,35 @@ class GoogleSheetsService
         $this->service = new Sheets($this->client);
     }
 
-    protected function getTargetSheetId()
+    public function getRangeForMapType($mapType = 'v1')
     {
-        if ($this->cachedSheetId !== null) {
-            return $this->cachedSheetId;
-        }
+        return $mapType === 'v2' ? 'kalabara-indoor!A:H' : env('GOOGLE_SHEET_RANGE', 'kalabara!A:H');
+    }
 
-        $range = env('GOOGLE_SHEET_RANGE', 'kalabara!A:H');
-        $sheetTitle = str_contains($range, '!') ? explode('!', $range)[0] : 'kalabara';
+    public function getSheetTitleForMapType($mapType = 'v1')
+    {
+        return $mapType === 'v2' ? 'kalabara-indoor' : 'kalabara';
+    }
+
+    protected function getTargetSheetId($sheetTitle = null)
+    {
+        if ($sheetTitle === null) {
+            $range = env('GOOGLE_SHEET_RANGE', 'kalabara!A:H');
+            $sheetTitle = str_contains($range, '!') ? explode('!', $range)[0] : 'kalabara';
+        }
 
         try {
             $spreadsheet = $this->service->spreadsheets->get($this->spreadsheetId);
             foreach ($spreadsheet->getSheets() as $sheet) {
                 if (strcasecmp($sheet->getProperties()->getTitle(), $sheetTitle) === 0) {
-                    $this->cachedSheetId = $sheet->getProperties()->getSheetId();
-                    return $this->cachedSheetId;
+                    return $sheet->getProperties()->getSheetId();
                 }
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning("GoogleSheets getTargetSheetId failed: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::warning("GoogleSheets getTargetSheetId failed for {$sheetTitle}: " . $e->getMessage());
         }
 
-        $this->cachedSheetId = 0;
-        return $this->cachedSheetId;
+        return 0;
     }
 
     public function appendReservations(array $reservations)
@@ -101,7 +114,10 @@ class GoogleSheetsService
                 'values' => $values,
             ]);
 
-            $range = env('GOOGLE_SHEET_RANGE', 'kalabara!A:H');
+            $firstRes = $reservations[0];
+            $isV2Batch = ($firstRes->map_type ?? 'v1') === 'v2';
+            $range = $this->getRangeForMapType($isV2Batch ? 'v2' : 'v1');
+            $sheetTitle = $this->getSheetTitleForMapType($isV2Batch ? 'v2' : 'v1');
 
             $response = null;
             try {
@@ -133,7 +149,7 @@ class GoogleSheetsService
                     if (preg_match('/!A([0-9]+):/', $updatedRange, $matches)) {
                         $startRowIndex = intval($matches[1]) - 1; // 0-based index
                         $endRowIndex = $startRowIndex + count($reservations);
-                        $this->styleRowsRange($startRowIndex, $endRowIndex, $reservations[0]->category);
+                        $this->styleRowsRange($startRowIndex, $endRowIndex, $reservations[0]->category, $sheetTitle);
                     }
                 } catch (\Exception $e) {
                     // Fail silently so sheet insertion still works if formatting fails
@@ -149,7 +165,7 @@ class GoogleSheetsService
         $this->appendReservations([$reservation]);
     }
 
-    protected function styleRowsRange($startRowIndex, $endRowIndex, $category)
+    protected function styleRowsRange($startRowIndex, $endRowIndex, $category, $sheetTitle = null)
     {
         $red = 1.0;
         $green = 1.0;
@@ -169,7 +185,7 @@ class GoogleSheetsService
             $blue = 1.0; // Soft Light Purple
         }
 
-        $sheetId = $this->getTargetSheetId();
+        $sheetId = $this->getTargetSheetId($sheetTitle);
 
         $request = new BatchUpdateSpreadsheetRequest([
             'requests' => [
@@ -210,9 +226,10 @@ class GoogleSheetsService
     public function deleteReservation($reservation)
     {
         try {
-            $range = env('GOOGLE_SHEET_RANGE', 'kalabara!A:H');
+            $isV2 = ($reservation->map_type ?? 'v1') === 'v2';
+            $range = $this->getRangeForMapType($isV2 ? 'v2' : 'v1');
+            $activeSheetTitle = $this->getSheetTitleForMapType($isV2 ? 'v2' : 'v1');
             $values = null;
-            $activeSheetTitle = str_contains($range, '!') ? explode('!', $range)[0] : 'kalabara';
 
             try {
                 $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
@@ -238,7 +255,7 @@ class GoogleSheetsService
             }
 
             if ($rowIndex !== -1) {
-                $sheetId = $this->getTargetSheetId();
+                $sheetId = $this->getTargetSheetId($activeSheetTitle);
                 $request = new BatchUpdateSpreadsheetRequest([
                     'requests' => [
                         [
@@ -263,12 +280,22 @@ class GoogleSheetsService
 
     public function updateReservation($reservation, $oldTicketNumber = null)
     {
-        try {
-            $ticketToFind = $oldTicketNumber ?? $reservation->ticket_number;
-            $range = env('GOOGLE_SHEET_RANGE', 'kalabara!A:H');
-            $values = null;
-            $activeSheetTitle = str_contains($range, '!') ? explode('!', $range)[0] : 'kalabara';
+        $this->updateReservationsBatch([$reservation], $oldTicketNumber);
+    }
 
+    public function updateReservationsBatch(array $reservations, $singleOldTicket = null)
+    {
+        if (empty($reservations)) {
+            return;
+        }
+
+        try {
+            $first = $reservations[0];
+            $isV2 = ($first->map_type ?? 'v1') === 'v2';
+            $range = $this->getRangeForMapType($isV2 ? 'v2' : 'v1');
+            $activeSheetTitle = $this->getSheetTitleForMapType($isV2 ? 'v2' : 'v1');
+
+            $values = null;
             try {
                 $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
                 $values = $response->getValues();
@@ -279,21 +306,40 @@ class GoogleSheetsService
                     $values = $response->getValues();
                 } catch (\Exception $e2) {
                     \Illuminate\Support\Facades\Log::error("Get sheet values failed: " . $e2->getMessage());
+                    return;
                 }
             }
 
-            $rowIndex = -1;
-            if ($values) {
-                foreach ($values as $index => $row) {
-                    if (isset($row[7]) && strcasecmp(trim($row[7]), trim($ticketToFind)) === 0) {
-                        $rowIndex = $index;
-                        break;
+            if (empty($values)) {
+                return;
+            }
+
+            // Index tickets in sheet
+            $ticketToRow = [];
+            foreach ($values as $index => $row) {
+                if (isset($row[7])) {
+                    $t = strtolower(trim((string)$row[7]));
+                    if ($t !== '') {
+                        $ticketToRow[$t] = $index;
                     }
                 }
             }
 
-            if ($rowIndex !== -1) {
-                $isV2 = ($reservation->map_type ?? 'v1') === 'v2';
+            $updateData = [];
+            foreach ($reservations as $reservation) {
+                $ticketToFind = strtolower(trim((string)($singleOldTicket ?? $reservation->ticket_number)));
+                if (!isset($ticketToRow[$ticketToFind])) {
+                    $curr = strtolower(trim((string)$reservation->ticket_number));
+                    if (!isset($ticketToRow[$curr])) {
+                        continue;
+                    }
+                    $rowIndex = $ticketToRow[$curr];
+                } else {
+                    $rowIndex = $ticketToRow[$ticketToFind];
+                }
+
+                $rowNumber = $rowIndex + 1; // 1-based row index in sheet
+
                 if ($isV2) {
                     $seatDetail = $reservation->category === 'standing'
                         ? 'Standing'
@@ -305,38 +351,34 @@ class GoogleSheetsService
                     $tableNumber = $reservation->table_number ? strtoupper(substr($reservation->side, 0, 1)).$reservation->table_number : 'N/A';
                     $sideLabel = ucfirst($reservation->side ?? 'Center');
                 }
-                $rowNumber = $rowIndex + 1; // 1-based row index in sheet
 
-                $updateValues = [
-                    [
-                        now()->toDateTimeString(),
-                        ucfirst($reservation->category),
-                        $sideLabel,
-                        $tableNumber,
-                        $seatDetail,
-                        $reservation->name,
-                        $reservation->email,
-                        $reservation->ticket_number,
+                $updateData[] = new Sheets\ValueRange([
+                    'range' => "{$activeSheetTitle}!A{$rowNumber}:H{$rowNumber}",
+                    'values' => [
+                        [
+                            now()->toDateTimeString(),
+                            ucfirst($reservation->category),
+                            $sideLabel,
+                            $tableNumber,
+                            $seatDetail,
+                            $reservation->name,
+                            $reservation->email,
+                            $reservation->ticket_number,
+                        ],
                     ],
-                ];
-
-                $body = new Sheets\ValueRange([
-                    'values' => $updateValues,
                 ]);
+            }
 
-                $updateRange = "{$activeSheetTitle}!A{$rowNumber}:H{$rowNumber}";
-                $this->service->spreadsheets_values->update(
-                    $this->spreadsheetId,
-                    $updateRange,
-                    $body,
-                    ['valueInputOption' => 'RAW']
-                );
-
-                $this->styleRowsRange($rowIndex, $rowIndex + 1, $reservation->category);
-                \Illuminate\Support\Facades\Log::info("Updated row {$rowNumber} for ticket {$reservation->ticket_number} in sheet {$activeSheetTitle}");
+            if (!empty($updateData)) {
+                $batchBody = new Sheets\BatchUpdateValuesRequest([
+                    'valueInputOption' => 'RAW',
+                    'data' => $updateData,
+                ]);
+                $this->service->spreadsheets_values->batchUpdate($this->spreadsheetId, $batchBody);
+                \Illuminate\Support\Facades\Log::info("Batch updated " . count($updateData) . " row(s) in sheet {$activeSheetTitle}");
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error("GoogleSheets updateReservation exception: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error("GoogleSheets updateReservationsBatch exception: " . $e->getMessage());
         }
     }
 }

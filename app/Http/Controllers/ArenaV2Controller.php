@@ -834,8 +834,20 @@ class ArenaV2Controller extends Controller
      */
     public function baseBookings()
     {
-        $v1List = Reservation::mapV1()->orderBy('id', 'desc')->get();
-        $v2List = Reservation::mapV2()->get();
+        if (!auth()->check() || !method_exists(auth()->user(), 'isEditor') || !auth()->user()->isEditor()) {
+            return response()->json([
+                'success' => true,
+                'base_groups' => [],
+            ]);
+        }
+
+        $v1List = Reservation::mapV1()
+            ->select(['id', 'name', 'email', 'ticket_number', 'category', 'side', 'table_number', 'seat_number', 'is_full_table', 'is_temporary', 'is_checked_in'])
+            ->orderBy('id', 'desc')
+            ->get();
+        $v2List = Reservation::mapV2()
+            ->select(['ticket_number', 'category', 'side', 'table_number', 'seat_number', 'is_full_table'])
+            ->get();
 
         // Map V2 ticket_numbers to their V2 locations so we can show if a V1 booking is already placed on V2
         $v2ByTicket = [];
@@ -905,7 +917,6 @@ class ArenaV2Controller extends Controller
         return response()->json([
             'success' => true,
             'base_groups' => array_values($groups),
-            'base_reservations' => $v1List,
         ]);
     }
 
@@ -933,7 +944,6 @@ class ArenaV2Controller extends Controller
         }
 
         $first = $v1Records->first();
-        $removeFromBase = filter_var($request->input('remove_from_base', false), FILTER_VALIDATE_BOOLEAN);
         $targetCategory = strtolower((string)$request->input('target_category', $first->category));
 
         // 1. Standing import
@@ -945,6 +955,7 @@ class ArenaV2Controller extends Controller
 
             $created = [];
             foreach ($v1Records as $rec) {
+                // Duplicate booking onto V2 without touching or deleting original V1 record
                 $created[] = Reservation::create([
                     'map_type' => 'v2',
                     'category' => 'standing',
@@ -957,8 +968,15 @@ class ArenaV2Controller extends Controller
                     'is_checked_in' => (bool)$rec->is_checked_in,
                     'checked_in_at' => $rec->checked_in_at,
                 ]);
-                if ($removeFromBase) {
-                    $rec->delete();
+            }
+
+            // Sync permanent standing bookings to V2 Excel sheet
+            $perm = array_values(array_filter($created, fn($r) => !$r->is_temporary));
+            if (!empty($perm)) {
+                try {
+                    $this->googleSheets->appendReservations($perm);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error("Google Sheets append standing import failed: " . $e->getMessage());
                 }
             }
 
@@ -981,7 +999,7 @@ class ArenaV2Controller extends Controller
             : (bool)$first->is_full_table;
 
         try {
-            $created = DB::transaction(function () use ($request, $v1Records, $first, $tableNumber, $v2Category, $wantFullTable, $removeFromBase) {
+            $created = DB::transaction(function () use ($request, $v1Records, $first, $tableNumber, $v2Category, $wantFullTable) {
                 $existingOnTable = Reservation::mapV2()
                     ->where('table_number', $tableNumber)
                     ->lockForUpdate()
@@ -996,6 +1014,7 @@ class ArenaV2Controller extends Controller
                         throw new \Exception("Table {$tableNumber} already has individual seats booked. Choose an empty table for a Full Table import.");
                     }
 
+                    // Create new V2 full table reservation (keep original V1 record intact)
                     $newRes = Reservation::create([
                         'map_type' => 'v2',
                         'category' => $v2Category,
@@ -1010,12 +1029,6 @@ class ArenaV2Controller extends Controller
                         'email' => $first->email,
                         'ticket_number' => $first->ticket_number,
                     ]);
-
-                    if ($removeFromBase) {
-                        foreach ($v1Records as $rec) {
-                            $rec->delete();
-                        }
-                    }
 
                     return [$newRes];
                 }
@@ -1060,6 +1073,7 @@ class ArenaV2Controller extends Controller
                 $createdRows = [];
                 foreach ($targetSeats as $idx => $seatNum) {
                     $src = $v1Records[$idx] ?? $first;
+                    // Create new V2 reservation (keep original V1 record intact)
                     $createdRows[] = Reservation::create([
                         'map_type' => 'v2',
                         'category' => $v2Category,
@@ -1076,14 +1090,18 @@ class ArenaV2Controller extends Controller
                     ]);
                 }
 
-                if ($removeFromBase) {
-                    foreach ($v1Records as $rec) {
-                        $rec->delete();
-                    }
-                }
-
                 return $createdRows;
             });
+
+            // Sync permanent seated bookings to V2 Excel sheet
+            $perm = array_values(array_filter($created, fn($r) => !$r->is_temporary));
+            if (!empty($perm)) {
+                try {
+                    $this->googleSheets->appendReservations($perm);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error("Google Sheets append seated import failed: " . $e->getMessage());
+                }
+            }
 
             $seatDesc = $wantFullTable
                 ? 'Full Table (8 Seats)'
@@ -1226,16 +1244,13 @@ class ArenaV2Controller extends Controller
                 return $updated;
             });
 
-            // Sync permanent moved bookings to Google Sheets
-            foreach ($moved as $m) {
-                if (!$m->is_temporary) {
-                    if (function_exists('Illuminate\Support\defer')) {
-                        \Illuminate\Support\defer(function () use ($m) {
-                            $this->googleSheets->updateReservation($m, $m->ticket_number);
-                        });
-                    } else {
-                        $this->googleSheets->updateReservation($m, $m->ticket_number);
-                    }
+            // Sync permanent moved bookings to Google Sheets in a single fast batch
+            $permanentMoved = array_values(array_filter($moved, fn($m) => !$m->is_temporary));
+            if (!empty($permanentMoved)) {
+                try {
+                    $this->googleSheets->updateReservationsBatch($permanentMoved);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error("Google Sheets batch update on move failed: " . $e->getMessage());
                 }
             }
 
