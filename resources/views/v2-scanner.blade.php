@@ -270,8 +270,12 @@
 <body>
     <header>
         <div class="brand-title">📷 V2 STAGE MAP (TABLES 1–130) • QR SCANNER &amp; CHECK-IN</div>
-        <div style="display:flex;gap:10px;">
-            <a href="{{ route('v2.dashboard') }}" class="nav-btn">⬅ Back to 13×10 Stage Map</a>
+        <div style="display:flex;gap:10px;align-items:center;">
+            <a href="{{ route('v2.dashboard') }}" class="nav-btn">⬅ 13×10 Stage Seat Map</a>
+            <form action="/logout" method="POST" style="margin: 0;">
+                @csrf
+                <button type="submit" class="nav-btn" style="background: rgba(230, 57, 70, 0.2); border: 1px solid var(--ruby-red); color: #fff; cursor: pointer;">Log Out</button>
+            </form>
         </div>
     </header>
 

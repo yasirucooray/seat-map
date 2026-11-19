@@ -24,6 +24,10 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
+        if (auth()->check() && method_exists(auth()->user(), 'canEdit') && !auth()->user()->canEdit()) {
+            return response()->json(['success' => false, 'message' => 'Volunteer accounts have view & check-in access only. Editing is disabled.'], 403);
+        }
+
         $is_temporary = filter_var($request->input('is_temporary', false), FILTER_VALIDATE_BOOLEAN);
 
         $rules = [
@@ -275,6 +279,10 @@ class BookingController extends Controller
 
     public function destroy($id)
     {
+        if (auth()->check() && method_exists(auth()->user(), 'canEdit') && !auth()->user()->canEdit()) {
+            return response()->json(['success' => false, 'message' => 'Volunteer accounts have view & check-in access only. Editing is disabled.'], 403);
+        }
+
         try {
             $reservation = Reservation::find($id);
             if (!$reservation) {
@@ -313,6 +321,10 @@ class BookingController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (auth()->check() && method_exists(auth()->user(), 'canEdit') && !auth()->user()->canEdit()) {
+            return response()->json(['success' => false, 'message' => 'Volunteer accounts have view & check-in access only. Editing is disabled.'], 403);
+        }
+
         try {
             $reservation = Reservation::find($id);
             if (!$reservation) {

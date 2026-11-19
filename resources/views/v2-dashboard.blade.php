@@ -1322,13 +1322,17 @@
         </div>
 
         <div class="header-actions">
+            @if (empty($isVolunteer))
             <a href="{{ route('dashboard') }}" class="btn-primary" style="width: auto; margin: 0; padding: 8px 14px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: var(--gold-gradient); color: #07050d; font-weight: 800; border-radius: 20px;">
                 ↩️ Base Tables Map (V1)
             </a>
+            @endif
             <a href="{{ route('v2.scanner') }}" class="btn-primary" style="width: auto; margin: 0; padding: 8px 16px; font-size: 0.82rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #39ff14 0%, #10b981 100%); color: #07050d; font-weight: 800; box-shadow: 0 0 18px rgba(57, 255, 20, 0.4); border-radius: 20px;">
                 📷 QR Check-In Scanner
             </a>
-            @if (!empty($isEditor))
+            @if (!empty($isVolunteer))
+                <span class="admin-badge" style="border-color: #39ff14; color: #39ff14; background: rgba(57, 255, 20, 0.12); box-shadow: 0 0 12px rgba(57, 255, 20, 0.35);">📷 VOLUNTEER (SCAN &amp; MAP)</span>
+            @elseif (!empty($isEditor))
                 <span class="admin-badge" style="border-color: #00f2fe; color: #00f2fe; background: rgba(0, 242, 254, 0.12); box-shadow: 0 0 12px rgba(0, 242, 254, 0.35);">✦ EDITOR ACCESS</span>
             @else
                 <span class="admin-badge">♠ ADMIN CONTROL</span>
@@ -1450,10 +1454,12 @@
                 </form>
 
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    @if (!empty($isEditor))
                     <button type="button" class="btn-primary" style="width: auto; padding: 10px 18px; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 8px; border-radius: 20px;" onclick="toggleV1ImportDrawer()">
                         📥 Add from Base Map (V1) Bookings
                         <span id="v1-unassigned-badge" style="background: #07050d; color: var(--gold-primary); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">0</span>
                     </button>
+                    @endif
                 </div>
             </div>
 
@@ -1923,6 +1929,8 @@
         });
 
         const IS_EDITOR = @json(!empty($isEditor));
+        const IS_VOLUNTEER = @json(!empty($isVolunteer));
+        const CAN_EDIT = @json(!empty($canEdit));
         let reservationsList = [];
         let baseGroupsList = [];
         let editorTransferState = null; // { mode: 'v2_move' | 'v1_import', ... }
@@ -2390,7 +2398,7 @@
                 tempHoldFullBtn.style.display = 'none';
                 hint.style.display = 'none';
 
-                if (isFullTemp && fullTableTempActions) {
+                if (isFullTemp && fullTableTempActions && CAN_EDIT) {
                     fullTableTempActions.style.display = 'flex';
                     document.getElementById('btn-make-table-perm').onclick = () => openMakePermanentModal(fullBooking.id);
                     document.getElementById('btn-release-table-temp').onclick = async () => {
@@ -2416,10 +2424,13 @@
                 showBubble(fullBooking);
             } else {
                 const isTableEmpty = bookings.length === 0;
-                reserveFullBtn.style.display = isTableEmpty ? 'block' : 'none';
-                tempHoldFullBtn.style.display = isTableEmpty ? 'block' : 'none';
+                reserveFullBtn.style.display = (isTableEmpty && CAN_EDIT) ? 'block' : 'none';
+                tempHoldFullBtn.style.display = (isTableEmpty && CAN_EDIT) ? 'block' : 'none';
                 fullTableTempActions.style.display = 'none';
                 hint.style.display = 'block';
+                hint.innerText = CAN_EDIT
+                    ? 'Select available seats to book or temporarily hold.'
+                    : 'Click any reserved seat to view attendee details and check-in status.';
 
                 for (let s = 1; s <= 8; s++) {
                     const seatEl = document.getElementById(`seat-${s}`);
@@ -2475,6 +2486,10 @@
         }
 
         function toggleSeatSelection(seatNumber) {
+            if (!CAN_EDIT && !editorTransferState) {
+                showToast(`Seat ${seatNumber} is available.`, 'info');
+                return;
+            }
             const seatEl = document.getElementById(`seat-${seatNumber}`);
             const index = selectedSeats.indexOf(seatNumber);
             if (index === -1) {
@@ -2497,6 +2512,11 @@
         function updateSelectedSeatsButton() {
             const btn = document.getElementById('btn-book-selected');
             const tempBtn = document.getElementById('btn-temp-hold-selected');
+            if (!CAN_EDIT) {
+                if (btn) btn.style.display = 'none';
+                if (tempBtn) tempBtn.style.display = 'none';
+                return;
+            }
             const count = selectedSeats.length;
             if (btn) {
                 btn.innerText = `Book Selected Seats (${count})`;
@@ -2567,9 +2587,10 @@
             }
 
             emailRow.style.display = isTemp && !booking.email ? 'none' : 'block';
-            btnMakePerm.style.display = isTemp ? 'inline-block' : 'none';
+            btnMakePerm.style.display = (isTemp && CAN_EDIT) ? 'inline-block' : 'none';
             btnCopyUrl.style.display = isTemp ? 'none' : 'inline-block';
             btnDelete.innerText = isTemp ? '🗑️ Release Hold' : 'Delete Ticket';
+            btnDelete.style.display = CAN_EDIT ? 'inline-block' : 'none';
 
             bubble.style.display = 'block';
             setTimeout(() => bubble.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
@@ -2707,6 +2728,10 @@
         }
 
         function openTemporaryHoldModal(mode) {
+            if (!CAN_EDIT) {
+                showToast('Volunteer access: View & QR Check-in only. Temporary holds are disabled.', 'info');
+                return;
+            }
             if (mode === 'seats' && selectedSeats.length === 0) return;
             closeModal('seating-modal');
 
@@ -2766,6 +2791,10 @@
         }
 
         function openMultiSeatBooking() {
+            if (!CAN_EDIT) {
+                showToast('Volunteer access: View & QR Check-in only. Booking creation is disabled.', 'info');
+                return;
+            }
             if (selectedSeats.length === 0) return;
             closeModal('seating-modal');
 
@@ -2787,6 +2816,10 @@
         }
 
         function initiateFullTableBooking() {
+            if (!CAN_EDIT) {
+                showToast('Volunteer access: View & QR Check-in only. Booking creation is disabled.', 'info');
+                return;
+            }
             closeModal('seating-modal');
 
             document.getElementById('booking-title').innerText = 'Full Table Booking';
@@ -2804,6 +2837,10 @@
         }
 
         function openStandingBooking(side) {
+            if (!CAN_EDIT) {
+                showToast('Volunteer access: View & QR Check-in only. Standing bookings are disabled.', 'info');
+                return;
+            }
             document.getElementById('booking-title').innerText = 'Standing Area Booking';
             document.getElementById('booking-summary-text').innerText = `Section: STANDING | Area: ${side.toUpperCase()} Standing`;
 
@@ -3177,11 +3214,16 @@
                     ? `<button onclick="openSeatForMove('${b.id}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: linear-gradient(135deg, #00f2fe, #4facfe); color: #07050d; font-weight: 800; margin-right: 6px; width: auto;" title="Move / Reallocate Seat">⇄ Move</button>`
                     : '';
 
-                const actionsHtml = isTemp
-                    ? `${moveBtn}<button onclick="openMakePermanentModal('${b.id}')" class="btn-primary" style="padding: 4px 10px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 800; margin-right: 6px; width: auto;">✨ Make Permanent</button>
-                       <button onclick="confirmDeleteBooking('${b.id}')" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">Release</button>`
-                    : `${moveBtn}<button onclick="copyCustomerSeatUrl('${encodeURIComponent(b.ticket_number)}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 700; margin-right: 6px; width: auto;">🔗 Copy Link</button>
+                let actionsHtml = '';
+                if (!CAN_EDIT) {
+                    actionsHtml = `<button onclick="copyCustomerSeatUrl('${encodeURIComponent(b.ticket_number)}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 700; width: auto;">🔗 Copy Link</button>`;
+                } else if (isTemp) {
+                    actionsHtml = `${moveBtn}<button onclick="openMakePermanentModal('${b.id}')" class="btn-primary" style="padding: 4px 10px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 800; margin-right: 6px; width: auto;">✨ Make Permanent</button>
+                       <button onclick="confirmDeleteBooking('${b.id}')" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">Release</button>`;
+                } else {
+                    actionsHtml = `${moveBtn}<button onclick="copyCustomerSeatUrl('${encodeURIComponent(b.ticket_number)}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: var(--gold-gradient); color: #110e1c; font-weight: 700; margin-right: 6px; width: auto;">🔗 Copy Link</button>
                        <button onclick="confirmDeleteBooking('${b.id}')" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem;">Delete</button>`;
+                }
 
                 const catLabel = b.category === 'platinum' ? 'vip' : b.category;
 

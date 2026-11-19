@@ -51,4 +51,20 @@ class User extends Authenticatable
     {
         return strtolower(trim((string)$this->email)) === 'editor2026.kalabara@gmail.com';
     }
+
+    /**
+     * Check if the authenticated user is the Volunteer account (QR Scanner & Seat Map Check only, no edit access).
+     */
+    public function isVolunteer(): bool
+    {
+        return strtolower(trim((string)$this->email)) === 'volunteer.kalabara@gmail.com';
+    }
+
+    /**
+     * Check if the user has edit/write permissions (Admin & Editor can edit, Volunteer is view & scan only).
+     */
+    public function canEdit(): bool
+    {
+        return !$this->isVolunteer();
+    }
 }

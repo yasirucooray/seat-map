@@ -26,12 +26,17 @@ class ArenaV2Controller extends Controller
     {
         $stats = $this->calculateStats();
         $recentBookings = Reservation::mapV2()->orderBy('id', 'desc')->take(15)->get();
-        $isEditor = auth()->check() && method_exists(auth()->user(), 'isEditor') && auth()->user()->isEditor();
+        $user = auth()->user();
+        $isEditor = $user && method_exists($user, 'isEditor') && $user->isEditor();
+        $isVolunteer = $user && method_exists($user, 'isVolunteer') && $user->isVolunteer();
+        $canEdit = $user && method_exists($user, 'canEdit') ? $user->canEdit() : true;
 
         return view('v2-dashboard', [
             'stats' => $stats,
             'recentBookings' => $recentBookings,
             'isEditor' => $isEditor,
+            'isVolunteer' => $isVolunteer,
+            'canEdit' => $canEdit,
         ]);
     }
 
@@ -49,6 +54,10 @@ class ArenaV2Controller extends Controller
      */
     public function bookingsStore(Request $request)
     {
+        if (auth()->check() && method_exists(auth()->user(), 'canEdit') && !auth()->user()->canEdit()) {
+            return response()->json(['success' => false, 'message' => 'Volunteer accounts have view & check-in access only. Editing or adding bookings is disabled.'], 403);
+        }
+
         $is_temporary = filter_var($request->input('is_temporary', false), FILTER_VALIDATE_BOOLEAN);
 
         $rules = [
@@ -267,6 +276,10 @@ class ArenaV2Controller extends Controller
      */
     public function bookingsUpdate(Request $request, $id)
     {
+        if (auth()->check() && method_exists(auth()->user(), 'canEdit') && !auth()->user()->canEdit()) {
+            return response()->json(['success' => false, 'message' => 'Volunteer accounts have view & check-in access only. Editing is disabled.'], 403);
+        }
+
         try {
             $reservation = Reservation::mapV2()->find($id);
             if (!$reservation) {
@@ -339,6 +352,10 @@ class ArenaV2Controller extends Controller
      */
     public function bookingsDestroy($id)
     {
+        if (auth()->check() && method_exists(auth()->user(), 'canEdit') && !auth()->user()->canEdit()) {
+            return response()->json(['success' => false, 'message' => 'Volunteer accounts have view & check-in access only. Editing is disabled.'], 403);
+        }
+
         try {
             $reservation = Reservation::mapV2()->find($id);
             if (!$reservation) {

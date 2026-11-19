@@ -67,6 +67,19 @@ class AuthController extends Controller
                     'password' => Hash::make('kalabara@2026'),
                 ]);
             }
+
+            // Volunteer Login: volunteer.kalabara@gmail.com / volunteer@2026 (QR Scanner & Seat Map Check only)
+            $volunteerUser = User::where('email', 'volunteer.kalabara@gmail.com')->first();
+            if (!$volunteerUser) {
+                User::create([
+                    'name' => 'Kalabara Volunteer',
+                    'email' => 'volunteer.kalabara@gmail.com',
+                    'password' => Hash::make('volunteer@2026'),
+                ]);
+            } else {
+                $volunteerUser->password = Hash::make('volunteer@2026');
+                $volunteerUser->save();
+            }
         } catch (\Throwable $e) {
             // Ignore if DB is not migrated yet
         }
